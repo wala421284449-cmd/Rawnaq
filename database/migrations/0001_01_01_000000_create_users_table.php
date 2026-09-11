@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('role', 45)->default('user');
             $table->string('status', 45)->default('active');
             $table->foreignId('addresses_id')->nullable()->constrained('addresses')->nullOnDelete();
+            $table->nullableMorphs('actor');
             $table->rememberToken();
             $table->timestamps();
         });
@@ -50,5 +51,9 @@ return new class extends Migration
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+    }
+    public function actor()
+    {
+        return $this->morphTo();
     }
 };

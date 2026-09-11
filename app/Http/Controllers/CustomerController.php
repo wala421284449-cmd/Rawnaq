@@ -3,40 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Models\Owner;
+use App\Models\Customer;
 use App\Models\Address;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
-class OwnerController extends Controller
+class CustomerController extends Controller
 {
     /**
-     * 1. عرض جدول مالكي وموردي متجر رونق
+     * 1. عرض جدول زبائن متجر رونق مع الترقيم والبحث التلقائي
      */
     public function index()
     {
-        $owners = User::where('role', 'owner')
+        $customers = User::where('role', 'customer')
             ->with(['actor', 'address.city'])
             ->orderBy('id', 'desc')
             ->paginate(10);
 
-        return view('cms.owner.index', compact('owners'));
+        return view('cms.customer.index', compact('customers'));
     }
 
     /**
-     * 2. عرض صفحة إضافة مالك جديد لمتجر رونق
+     * 2. عرض صفحة إضافة زبون جديد
      */
     public function create()
     {
         $address = Address::with('city')->latest()->get();
 
-        return response()->view('cms.owner.create', compact('address'));
+        return response()->view('cms.customer.create', compact('address'));
     }
 
     /**
-     * 3. حفظ بيانات المالك الجديد في متجر رونق (AJAX - POST)
+     * 3. حفظ بيانات الزبون الجديد في قاعدة البيانات (AJAX - POST)
      */
     public function store(Request $request)
     {
@@ -45,25 +45,24 @@ class OwnerController extends Controller
             'email'           => 'required|email|max:45|unique:users,email',
             'phone'           => 'required|string|max:45',
             'password'        => 'required|string|min:6',
-            'id_number'       => 'required|string|max:20',
+            'id_number'       => 'nullable|string|max:20',
             'whats_up_number' => 'required|string|max:45',
             'gender'          => 'required|in:male,female',
             'status'          => 'required|in:active,inactive',
             'address_id'      => 'required|exists:addresses,id',
         ], [
-            'name.required'            => 'اسم المالك مطلوب.',
+            'name.required'            => 'اسم الزبون مطلوب.',
             'name.min'                 => 'يجب ألا يقل الاسم عن 3 أحرف.',
             'email.required'           => 'البريد الإلكتروني مطلوب.',
-            'email.email'              => 'يرجى كتابة بريد إلكتروني صحيح.',
-            'email.unique'             => 'هذا البريد مسجل مسبقاً في متجر رونق.',
+            'email.email'              => 'يرجى إدخال بريد إلكتروني صحيح.',
+            'email.unique'             => 'هذا البريد الإلكتروني مسجل مسبقاً لدى زبون آخر.',
             'phone.required'           => 'رقم الهاتف مطلوب.',
             'password.required'        => 'كلمة المرور مطلوبة.',
             'password.min'             => 'يجب ألا تقل كلمة المرور عن 6 خانات.',
-            'id_number.required'       => 'رقم الهوية مطلوب.',
-            'whats_up_number.required' => 'رقم الواتساب مطلوب.',
-            'gender.required'          => 'يرجى اختيار الجنس.',
+            'whats_up_number.required' => 'رقم الواتساب مطلوب للتواصل وإرسال إشعارات الطلب.',
+            'gender.required'          => 'يرجى تحديد الجنس.',
             'status.required'          => 'يرجى تحديد حالة الحساب.',
-            'address_id.required'      => 'يرجى اختيار العنوان المسجل.',
+            'address_id.required'      => 'يرجى تحديد عنوان التوصيل.',
             'address_id.exists'        => 'العنوان المحدد غير مسجل في النظام.',
         ]);
 
@@ -81,48 +80,48 @@ class OwnerController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. إنشاء سجل المالك وحفظ الهوية والواتساب في جدول owners
-            $ownerActor = new Owner();
-            $ownerActor->id_number       = $request->input('id_number');
-            $ownerActor->whats_up_number = $request->input('whats_up_number');
-            $ownerActor->save();
+            // 1. إنشاء سجل الزبون في جدول customers التابع لعلاقة الـ Actor
+            $customerActor = new Customer();
+            $customerActor->id_number       = $request->input('id_number');
+            $customerActor->whats_up_number = $request->input('whats_up_number');
+            $customerActor->save();
 
-            // 2. إنشاء المستخدم وربطه بالمالك عبر المورف (actor)
+            // 2. إنشاء المستخدم وربطه بالزبون عبر الـ Polymorphic Actor
             $user = new User();
             $user->name         = $request->input('name');
             $user->email        = $request->input('email');
             $user->phone        = $request->input('phone');
             $user->password     = Hash::make($request->input('password'));
             $user->gender       = $request->input('gender');
-            $user->role         = 'owner';
+            $user->role         = 'customer';
             $user->status       = $request->input('status');
             $user->addresses_id = $request->input('address_id');
 
-            // ربط الـ Polymorphic Actor
-            $user->actor_id     = $ownerActor->id;
-            $user->actor_type   = Owner::class;
+            // ربط الـ Polymorphic Relation
+            $user->actor_id     = $customerActor->id;
+            $user->actor_type   = Customer::class;
             $user->save();
 
             DB::commit();
 
-            Log::info('متجر رونق: تم تسجيل حساب مالك جديد بنجاح', [
-                'user_id'  => $user->id,
-                'owner_id' => $ownerActor->id,
-                'email'    => $user->email,
-                'admin_id' => auth('web')->id() ?? 'لوحة التحكم',
-                'ip'       => $request->ip(),
+            Log::info('متجر رونق: تم تسجيل حساب زبون جديد بنجاح', [
+                'user_id'     => $user->id,
+                'customer_id' => $customerActor->id,
+                'email'       => $user->email,
+                'admin_id'    => auth('web')->id() ?? 'لوحة التحكم',
+                'ip'          => $request->ip(),
             ]);
 
             return response()->json([
                 'icon'    => 'success',
                 'title'   => 'تم بنجاح',
-                'text'    => 'تمت إضافة مالك المتجر بنجاح',
-                'message' => 'تمت إضافة مالك المتجر بنجاح'
+                'text'    => 'تمت إضافة الزبون بنجاح إلى متجر رونق',
+                'message' => 'تمت إضافة الزبون بنجاح إلى متجر رونق'
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('متجر رونق: فشل حفظ بيانات المالك في قاعدة البيانات', [
+            Log::error('متجر رونق: فشل إضافة الزبون في قاعدة البيانات', [
                 'error_message' => $e->getMessage(),
                 'file'          => $e->getFile(),
                 'line'          => $e->getLine(),
@@ -132,63 +131,62 @@ class OwnerController extends Controller
             return response()->json([
                 'icon'    => 'error',
                 'title'   => 'خطأ في النظام',
-                'text'    => 'تعذر حفظ بيانات المالك: ' . $e->getMessage(),
-                'message' => 'تعذر حفظ بيانات المالك في قاعدة البيانات'
+                'text'    => 'تعذر حفظ بيانات الزبون: ' . $e->getMessage(),
+                'message' => 'تعذر حفظ بيانات الزبون في قاعدة البيانات'
             ], 500);
         }
     }
 
     /**
-     * 4. عرض تفاصيل ملف المالك في متجر رونق
+     * 4. عرض تفاصيل ملف الزبون وطلباته
      */
     public function show($id)
     {
-        $owner = User::where('role', 'owner')
+        $customer = User::where('role', 'customer')
             ->with(['actor', 'address.city'])
             ->findOrFail($id);
 
-        return response()->view('cms.owner.show', compact('owner'));
+        return response()->view('cms.customer.show', compact('customer'));
     }
 
     /**
-     * 5. عرض صفحة تعديل بيانات المالك
+     * 5. عرض صفحة تعديل بيانات الزبون
      */
     public function edit($id)
     {
-        $owner   = User::where('role', 'owner')->with('actor')->findOrFail($id);
-        $address = Address::with('city')->latest()->get();
+        $customers = User::where('role', 'customer')->with('actor')->findOrFail($id);
+        $address   = Address::with('city')->latest()->get();
 
-        return response()->view('cms.owner.edit', compact('owner', 'address'));
+        return response()->view('cms.customer.edit', compact('customers', 'address'));
     }
 
     /**
-     * 6. تحديث بيانات المالك في متجر رونق (AJAX - PUT/POST/JSON)
+     * 6. تحديث بيانات الزبون في قاعدة البيانات (AJAX - POST / PUT)
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'owner')->with('actor')->findOrFail($id);
+        $user = User::where('role', 'customer')->with('actor')->findOrFail($id);
 
         $validator = validator($request->all(), [
             'name'            => 'required|string|min:3|max:45',
             'email'           => 'required|email|max:45|unique:users,email,' . $user->id,
             'phone'           => 'required|string|max:45',
             'password'        => 'nullable|string|min:6',
-            'id_number'       => 'required|string|max:20',
+            'id_number'       => 'nullable|string|max:20',
             'whats_up_number' => 'required|string|max:45',
             'gender'          => 'required|in:male,female',
             'status'          => 'required|in:active,inactive',
             'address_id'      => 'required|exists:addresses,id',
         ], [
-            'name.required'            => 'اسم المالك مطلوب.',
+            'name.required'            => 'اسم الزبون مطلوب.',
             'email.required'           => 'البريد الإلكتروني مطلوب.',
             'email.unique'             => 'البريد الإلكتروني مستخدم بالفعل.',
             'phone.required'           => 'رقم الهاتف مطلوب.',
-            'password.min'             => 'يجب ألا تقل كلمة المرور عن 6 خانات إن تم تعديلها.',
-            'id_number.required'       => 'رقم الهوية مطلوب.',
+            'password.min'             => 'يجب ألا تقل كلمة المرور عن 6 خانات في حال الرغبة بتغييرها.',
             'whats_up_number.required' => 'رقم الواتساب مطلوب.',
             'gender.required'          => 'يرجى تحديد الجنس.',
             'status.required'          => 'يرجى تحديد حالة الحساب.',
-            'address_id.required'      => 'يرجى تحديد العنوان.',
+            'address_id.required'      => 'يرجى تحديد عنوان التوصيل.',
             'address_id.exists'        => 'العنوان المحدد غير مسجل بالنظام.',
         ]);
 
@@ -220,40 +218,40 @@ class OwnerController extends Controller
             $user->addresses_id = $request->input('address_id');
             $user->save();
 
-            // 2. تحديث جدول owners
-            $ownerActor = $user->actor;
-            if (!$ownerActor) {
-                $ownerActor = new Owner();
-                $ownerActor->save();
-                $user->actor_id   = $ownerActor->id;
-                $user->actor_type = Owner::class;
+            // 2. تحديث جدول customers عبر الـ Actor
+            $customerActor = $user->actor;
+            if (!$customerActor) {
+                $customerActor = new Customer();
+                $customerActor->save();
+                $user->actor_id   = $customerActor->id;
+                $user->actor_type = Customer::class;
                 $user->save();
             }
 
-            $ownerActor->id_number       = $request->input('id_number');
-            $ownerActor->whats_up_number = $request->input('whats_up_number');
-            $ownerActor->save();
+            $customerActor->id_number       = $request->input('id_number');
+            $customerActor->whats_up_number = $request->input('whats_up_number');
+            $customerActor->save();
 
             DB::commit();
 
-            Log::info('متجر رونق: تم تحديث بيانات المالك بنجاح', [
-                'user_id'  => $user->id,
-                'owner_id' => $ownerActor->id,
-                'email'    => $user->email,
-                'admin_id' => auth('web')->id() ?? 'لوحة التحكم',
-                'ip'       => $request->ip(),
+            Log::info('متجر رونق: تم تحديث بيانات الزبون بنجاح', [
+                'user_id'     => $user->id,
+                'customer_id' => $customerActor->id,
+                'email'       => $user->email,
+                'admin_id'    => auth('web')->id() ?? 'لوحة التحكم',
+                'ip'          => $request->ip(),
             ]);
 
             return response()->json([
                 'icon'    => 'success',
                 'title'   => 'تم التعديل بنجاح',
-                'text'    => 'تم تحديث بيانات المالك في متجر رونق بنجاح',
-                'message' => 'تم تحديث بيانات المالك في متجر رونق بنجاح'
+                'text'    => 'تم تحديث بيانات الزبون بنجاح',
+                'message' => 'تم تحديث بيانات الزبون بنجاح'
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('متجر رونق: فشل تحديث بيانات المالك', [
+            Log::error('متجر رونق: فشل تحديث بيانات الزبون', [
                 'error_message' => $e->getMessage(),
                 'user_id'       => $id,
                 'line'          => $e->getLine(),
@@ -263,23 +261,23 @@ class OwnerController extends Controller
             return response()->json([
                 'icon'    => 'error',
                 'title'   => 'فشلت العملية',
-                'text'    => 'تعذر تحديث بيانات المالك في قاعدة البيانات',
-                'message' => 'تعذر تحديث بيانات المالك في قاعدة البيانات'
+                'text'    => 'تعذر تحديث بيانات الزبون في قاعدة البيانات',
+                'message' => 'تعذر تحديث بيانات الزبون في قاعدة البيانات'
             ], 500);
         }
     }
 
     /**
-     * 7. حذف حساب المالك وسجل المورف المرتبط به (AJAX - DELETE)
+     * 7. حذف حساب الزبون وسجل المورف المرتبط به (AJAX - DELETE)
      */
     public function destroy($id)
     {
         DB::beginTransaction();
         try {
-            $user = User::where('role', 'owner')->with('actor')->findOrFail($id);
+            $user = User::where('role', 'customer')->with('actor')->findOrFail($id);
             $userEmail = $user->email;
 
-            // حذف سجل المالك من جدول owners إن وجد
+            // حذف سجل الزبون من جدول customers إن وجد
             if ($user->actor) {
                 $user->actor->delete();
             }
@@ -288,7 +286,7 @@ class OwnerController extends Controller
 
             DB::commit();
 
-            Log::info('متجر رونق: تم حذف حساب المالك', [
+            Log::info('متجر رونق: تم حذف حساب الزبون', [
                 'deleted_user_id' => $id,
                 'email'           => $userEmail,
                 'admin_id'        => auth('web')->id() ?? 'لوحة التحكم',
@@ -297,13 +295,13 @@ class OwnerController extends Controller
             return response()->json([
                 'icon'    => 'success',
                 'title'   => 'تم الحذف بنجاح',
-                'text'    => 'تم حذف حساب المالك من متجر رونق',
-                'message' => 'تم حذف حساب المالك من متجر رونق'
+                'text'    => 'تم حذف حساب الزبون من متجر رونق',
+                'message' => 'تم حذف حساب الزبون من متجر رونق'
             ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Log::error('متجر رونق: فشل حذف حساب المالك', [
+            Log::error('متجر رونق: فشل حذف حساب الزبون', [
                 'error_message' => $e->getMessage(),
                 'user_id'       => $id,
             ]);
@@ -311,8 +309,8 @@ class OwnerController extends Controller
             return response()->json([
                 'icon'    => 'error',
                 'title'   => 'فشلت العملية',
-                'text'    => 'تعذر حذف المالك لوجود بيانات مرتبطة به في المتجر',
-                'message' => 'تعذر حذف المالك لوجود بيانات مرتبطة به في المتجر'
+                'text'    => 'تعذر حذف الزبون لوجود طلبات أو بيانات مرتبطة به في المتجر',
+                'message' => 'تعذر حذف الزبون لوجود بيانات مرتبطة به في المتجر'
             ], 400);
         }
     }

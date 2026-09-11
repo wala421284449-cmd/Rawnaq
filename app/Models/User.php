@@ -59,10 +59,7 @@ class User extends Authenticatable
         return $this->belongsTo(Address::class, 'addresses_id', 'id');
     }
 
-    public function owner()
-    {
-        return $this->hasOne(Owner::class, 'user_id', 'id');
-    }
+   
     public function actor()
     {
         return $this->morphTo();
