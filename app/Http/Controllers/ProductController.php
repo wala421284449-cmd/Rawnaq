@@ -19,12 +19,19 @@ class ProductController extends Controller
     /**
      * عرض قائمة المنتجات مع جلب العلاقات (المتجر والتصنيف) والتصفح.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $this->authorize('viewAny', Product::class);
+        $products = Product::query()
+            ->search($request->input('search'))
+            ->byCategory($request->input('category_id'))
+            ->priceRange($request->input('min_price'), $request->input('max_price'))
+            ->sortProducts($request->input('sort'))
+            ->paginate(10)
+            ->withQueryString(); // للحفاظ على فلاتر البحث عند التنقل بين الصفحات
 
-        $products = Product::with(['store', 'category'])->latest()->paginate(10);
-        return view('cms.product.index', compact('products'));
+        $categories = Category::all();
+
+        return view('cms.product.index', compact('products', 'categories'));
     }
 
     /**
@@ -379,27 +386,7 @@ class ProductController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-    /**
-     * استيراد بيانات المنتجات مع التحقق والـ Logs والإشعارات
-     */
-    /**
-     * استيراد بيانات المنتجات بمرونة عبر أسماء الأعمدة مع التحقق والـ Logs والإشعارات
-     */
-    /**
-     * استيراد بيانات المنتجات بمرونة عبر أسماء الأعمدة مع التحقق والـ Logs والإشعارات
-     */
-    /**
-     * استيراد بيانات المنتجات بحسب الفهارس والأعمدة الفعلية لملف الـ CSV
-     */
-    /**
-     * استيراد بيانات المنتجات من ملف Excel/CSV بدون الحاجة لصف رأس
-     */
-    /**
-     * استيراد بيانات المنتجات بذكاء باكتشاف مواقع الأعمدة تلقائياً من ملف الـ CSV/Excel
-     */
-    /**
-     * استيراد بيانات المنتجات مباشرة عبر الفهارس (Indexes) لتجاوز مشاكل الترميز والأسماء
-     */
+
     public function import(Request $request)
     {
         $this->authorize('create', Product::class);

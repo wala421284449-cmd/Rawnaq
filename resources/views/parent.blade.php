@@ -261,14 +261,30 @@
                 <!--begin::End Navbar Links-->
                 <ul class="navbar-nav ms-auto">
                     <!--begin::Navbar Search-->
-                    <li class="nav-item">
-                        <a class="nav-link" data-widget="navbar-search" href="#" role="button">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" data-bs-toggle="dropdown" href="#" role="button"
+                            aria-expanded="false">
                             <i class="bi bi-search"></i>
                         </a>
+                        <!-- قائمة البحث المنسدلة السريعة -->
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-3 border-0 shadow-lg mt-2"
+                            style="width: 300px; border-radius: 1rem;" dir="rtl">
+                            <form action="{{ route('products.index') }}" method="GET">
+                                <div class="input-group">
+                                    <input type="text" name="search" value="{{ request('search') }}"
+                                        class="form-control form-control-sm border-0 bg-light"
+                                        placeholder="ابحث عن منتج، رمز SKU...">
+                                    <button class="btn btn-outline-secondary btn-sm border-0" type="submit"
+                                        style="background-color: rgba(var(--rawnaq-primary-rgb, 219, 39, 119), 0.1); color: var(--rawnaq-primary);">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </li>
                     <!--end::Navbar Search-->
 
-                    <!--begin::Messages Dropdown Menu (جرس التنبيهات الحقيقي والفعال) -->
+                    <!--begin::Notifications Dropdown Menu (جرس التنبيهات الحقيقي والفعال) -->
                     <!--begin::Notifications Dropdown Menu (تصميم احترافي متناسق) -->
                     <li class="nav-item dropdown px-2">
                         <a class="nav-link dropdown-toggle position-relative hide-arrow d-flex align-items-center justify-content-center"
