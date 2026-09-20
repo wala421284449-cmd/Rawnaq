@@ -5,14 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CityController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->authorize('viewAny', City::class);
+
         $cities = City::orderBy('id', 'desc')->paginate(10);
         return view('cms.city.index', compact('cities'));
     }
@@ -22,7 +29,8 @@ class CityController extends Controller
      */
     public function create()
     {
-        $cities = City::where('is_active', 'active')->get();
+        $this->authorize('create', City::class);
+
         return response()->view('cms.city.create');
     }
 
@@ -31,32 +39,57 @@ class CityController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', City::class);
+
         $validator = validator($request->all(), [
             'name'      => 'required|string|max:255',
             'slug'      => 'nullable|string|max:255|unique:cities,slug',
             'is_active' => 'required|in:active,inactive',
+        ], [
+            'name.required'      => 'اسم المدينة حقل إلزامي.',
+            'is_active.required' => 'يرجى تحديد حالة النشاط.',
+            'is_active.in'       => 'حالة النشاط غير صالحة.',
         ]);
 
-        if (!$validator->fails()) {
-            $city = new City();
-            $city->name = $request->input('name');
-            $city->slug = $request->input('slug') ?: \Illuminate\Support\Str::slug($request->input('name'));
-            $city->is_active = $request->input('is_active');
-            $isSaved = $city->save();
+        if ($validator->fails()) {
+            $firstError = $validator->getMessageBag()->first();
 
-            return response()->json([
-                'icon'    => $isSaved ? 'success' : 'error',
-                'title'   => $isSaved ? 'تم بنجاح' : 'فشلت العملية',
-                'text'    => $isSaved ? 'تمت إضافة المدينة بنجاح' : 'فشلت إضافة المدينة',
-                'message' => $isSaved ? 'تمت إضافة المدينة بنجاح' : 'فشلت إضافة المدينة'
-            ], $isSaved ? 201 : 400);
-        } else {
             return response()->json([
                 'icon'    => 'error',
                 'title'   => 'خطأ في المدخلات',
-                'text'    => $validator->getMessageBag()->first(),
-                'message' => $validator->getMessageBag()->first()
+                'text'    => $firstError,
+                'message' => $firstError
             ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $city = new City();
+            $city->name = $request->input('name');
+            $city->slug = $request->input('slug') ?: Str::slug($request->input('name'));
+            $city->is_active = $request->input('is_active');
+            $city->save();
+
+            DB::commit();
+
+            return response()->json([
+                'icon'    => 'success',
+                'title'   => 'تم بنجاح',
+                'text'    => 'تمت إضافة المدينة بنجاح',
+                'message' => 'تمت إضافة المدينة بنجاح'
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('متجر رونق: فشل حفظ المدينة', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'icon'    => 'error',
+                'title'   => 'خطأ في النظام',
+                'message' => 'فشلت إضافة المدينة في قاعدة البيانات'
+            ], 500);
         }
     }
 
@@ -65,16 +98,20 @@ class CityController extends Controller
      */
     public function show(City $city)
     {
+        $this->authorize('view', $city);
+
         return view('cms.city.show', compact('city'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(City $city)
     {
-        $cities = City::findorFail($id);
-        return response()->view('cms.city.edit', compact('cities'));
+        $this->authorize('update', $city);
+
+        // توحيد اسم المتغير ليطابق الـ View (إذا كنتِ تستخدمين city مفرد أو جمع حسب تصميمك)
+        return response()->view('cms.city.edit', compact('city'));
     }
 
     /**
@@ -82,52 +119,89 @@ class CityController extends Controller
      */
     public function update(Request $request, City $city)
     {
+        $this->authorize('update', $city);
+
         $validator = validator($request->all(), [
             'name'      => 'required|string|max:255',
             'slug'      => 'nullable|string|max:255|unique:cities,slug,' . $city->id,
             'is_active' => 'required|in:active,inactive',
+        ], [
+            'name.required'      => 'اسم المدينة حقل إلزامي.',
+            'slug.unique'        => 'الرابط المختصر (Slug) مستخدم مسبقاً.',
+            'is_active.required' => 'حالة النشاط مطلوبة.',
         ]);
 
-        if (!$validator->fails()) {
-            $city->name = $request->input('name');
-            $city->slug = $request->input('slug') ?: \Illuminate\Support\Str::slug($request->input('name'));
-            $city->is_active = $request->input('is_active');
-            $isSaved = $city->save();
+        if ($validator->fails()) {
+            $firstError = $validator->getMessageBag()->first();
 
-            return response()->json([
-                'icon'    => $isSaved ? 'success' : 'error',
-                'title'   => $isSaved ? 'تم بنجاح' : 'فشلت العملية',
-                'text'    => $isSaved ? 'تم تعديل المدينة بنجاح' : 'فشلت عملية التعديل',
-                'message' => $isSaved ? 'تم تعديل المدينة بنجاح' : 'فشلت عملية التعديل'
-            ], $isSaved ? 200 : 400);
-        } else {
             return response()->json([
                 'icon'    => 'error',
                 'title'   => 'خطأ في الإدخال',
-                'text'    => $validator->getMessageBag()->first(),
-                'message' => $validator->getMessageBag()->first()
+                'text'    => $firstError,
+                'message' => $firstError
             ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $city->name = $request->input('name');
+            $city->slug = $request->input('slug') ?: Str::slug($request->input('name'));
+            $city->is_active = $request->input('is_active');
+            $city->save();
+
+            DB::commit();
+
+            return response()->json([
+                'icon'    => 'success',
+                'title'   => 'تم بنجاح',
+                'text'    => 'تم تعديل المدينة بنجاح',
+                'message' => 'تم تعديل المدينة بنجاح'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('متجر رونق: فشل تحديث المدينة', [
+                'id'    => $city->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'icon'    => 'error',
+                'title'   => 'خطأ في النظام',
+                'message' => 'فشلت عملية التعديل'
+            ], 500);
         }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(City $city)
     {
-        $city = City::findOrFail($id);
-        $isDeleted = $city->delete();
+        $this->authorize('delete', $city);
 
-        if ($isDeleted) {
+        DB::beginTransaction();
+        try {
+            $city->delete();
+
+            DB::commit();
+
             return response()->json([
                 'icon'  => 'success',
                 'title' => 'تم حذف المدينة بنجاح',
             ], 200);
-        }
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-        return response()->json([
-            'icon'  => 'error',
-            'title' => 'فشلت عملية الحذف',
-        ], 400);
+            Log::error('متجر رونق: فشل حذف المدينة', [
+                'id'    => $city->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'icon'  => 'error',
+                'title' => 'فشلت عملية الحذف لوجود بيانات مرتبطة بها',
+            ], 400);
+        }
     }
 }

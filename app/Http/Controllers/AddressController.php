@@ -5,14 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Address;
 use App\Models\City;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AddressController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        $this->authorize('viewAny', Address::class);
+
         $addresses = Address::with('city')->orderBy('id', 'desc')->paginate(10);
         return view('cms.address.index', compact('addresses'));
     }
@@ -22,6 +29,8 @@ class AddressController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', Address::class);
+
         $cities = City::where('is_active', 'active')->orWhere('is_active', 1)->orderBy('name')->get();
         return response()->view('cms.address.create', compact('cities'));
     }
@@ -31,6 +40,9 @@ class AddressController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. إضافة صلاحية الإنشاء هنا لتكتمل الحماية
+        $this->authorize('create', Address::class);
+
         $validator = validator($request->all(), [
             'area'             => 'required|string|max:45',
             'street'           => 'required|string|max:45',
@@ -64,21 +76,40 @@ class AddressController extends Controller
             ], 400);
         }
 
-        $address = new Address();
-        $address->area = $request->input('area');
-        $address->street = $request->input('street');
-        $address->building_details = $request->input('building_details');
-        $address->city_id = $request->input('city_id');
-        $address->latitude = $request->input('latitude');
-        $address->longitude = $request->input('longitude');
-        $isSaved = $address->save();
+        DB::beginTransaction();
+        try {
+            $address = new Address();
+            $address->area = $request->input('area');
+            $address->street = $request->input('street');
+            $address->building_details = $request->input('building_details');
+            $address->city_id = $request->input('city_id');
+            $address->latitude = $request->input('latitude');
+            $address->longitude = $request->input('longitude');
+            $address->save();
 
-        return response()->json([
-            'icon'    => $isSaved ? 'success' : 'error',
-            'title'   => $isSaved ? 'تم الحفظ بنجاح' : 'فشلت العملية',
-            'text'    => $isSaved ? 'تمت إضافة العنوان الجديد بنجاح' : 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات',
-            'message' => $isSaved ? 'تمت إضافة العنوان الجديد بنجاح' : 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات'
-        ], $isSaved ? 201 : 400);
+            DB::commit();
+
+            return response()->json([
+                'icon'    => 'success',
+                'title'   => 'تم الحفظ بنجاح',
+                'text'    => 'تمت إضافة العنوان الجديد بنجاح',
+                'message' => 'تمت إضافة العنوان الجديد بنجاح'
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('متجر رونق: فشل حفظ العنوان', [
+                'error' => $e->getMessage(),
+                'ip'    => $request->ip(),
+            ]);
+
+            return response()->json([
+                'icon'    => 'error',
+                'title'   => 'خطأ في النظام',
+                'text'    => 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات',
+                'message' => 'حدث خطأ أثناء حفظ البيانات في قاعدة البيانات'
+            ], 500);
+        }
     }
 
     /**
@@ -87,6 +118,10 @@ class AddressController extends Controller
     public function show($id)
     {
         $address = Address::with('city')->findOrFail($id);
+
+        // 2. إضافة فحص الصلاحية للعرض
+        $this->authorize('view', $address);
+
         return response()->view('cms.address.show', compact('address'));
     }
 
@@ -95,6 +130,8 @@ class AddressController extends Controller
      */
     public function edit(Address $address)
     {
+        $this->authorize('update', $address);
+
         $cities = City::where('is_active', 'active')->orWhere('is_active', 1)->orderBy('name')->get();
         return response()->view('cms.address.edit', compact('address', 'cities'));
     }
@@ -104,6 +141,8 @@ class AddressController extends Controller
      */
     public function update(Request $request, Address $address)
     {
+        $this->authorize('update', $address);
+
         $validator = validator($request->all(), [
             'area'             => 'required|string|max:45',
             'street'           => 'required|string|max:45',
@@ -137,20 +176,39 @@ class AddressController extends Controller
             ], 400);
         }
 
-        $address->area = $request->input('area');
-        $address->street = $request->input('street');
-        $address->building_details = $request->input('building_details');
-        $address->city_id = $request->input('city_id');
-        $address->latitude = $request->input('latitude');
-        $address->longitude = $request->input('longitude');
-        $isSaved = $address->save();
+        DB::beginTransaction();
+        try {
+            $address->area = $request->input('area');
+            $address->street = $request->input('street');
+            $address->building_details = $request->input('building_details');
+            $address->city_id = $request->input('city_id');
+            $address->latitude = $request->input('latitude');
+            $address->longitude = $request->input('longitude');
+            $address->save();
 
-        return response()->json([
-            'icon'    => $isSaved ? 'success' : 'error',
-            'title'   => $isSaved ? 'تم التعديل بنجاح' : 'فشلت العملية',
-            'text'    => $isSaved ? 'تم تحديث بيانات العنوان بنجاح' : 'تعذر تحديث العنوان في قاعدة البيانات',
-            'message' => $isSaved ? 'تم تحديث بيانات العنوان بنجاح' : 'تعذر تحديث العنوان في قاعدة البيانات'
-        ], $isSaved ? 200 : 400);
+            DB::commit();
+
+            return response()->json([
+                'icon'    => 'success',
+                'title'   => 'تم التعديل بنجاح',
+                'text'    => 'تم تحديث بيانات العنوان بنجاح',
+                'message' => 'تم تحديث بيانات العنوان بنجاح'
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('متجر رونق: فشل تحديث العنوان', [
+                'id'    => $address->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'icon'    => 'error',
+                'title'   => 'فشلت العملية',
+                'text'    => 'تعذر تحديث العنوان في قاعدة البيانات',
+                'message' => 'تعذر تحديث العنوان في قاعدة البيانات'
+            ], 500);
+        }
     }
 
     /**
@@ -158,22 +216,35 @@ class AddressController extends Controller
      */
     public function destroy(Address $address)
     {
-        $isDeleted = $address->delete();
+        // 3. تمرير كائن الـ $address بدلاً من اسم الكلاس للفحص الصحيح
+        $this->authorize('delete', $address);
 
-        if ($isDeleted) {
+        DB::beginTransaction();
+        try {
+            $address->delete();
+
+            DB::commit();
+
             return response()->json([
                 'icon'    => 'success',
                 'title'   => 'تم الحذف بنجاح',
                 'text'    => 'تم حذف العنوان من النظام نهائياً',
                 'message' => 'تم حذف العنوان من النظام نهائياً'
             ], 200);
-        }
+        } catch (\Exception $e) {
+            DB::rollBack();
 
-        return response()->json([
-            'icon'    => 'error',
-            'title'   => 'فشلت العملية',
-            'text'    => 'تعذر حذف العنوان، يرجى المحاولة لاحقاً',
-            'message' => 'تعذر حذف العنوان، يرجى المحاولة لاحقاً'
-        ], 400);
+            Log::error('متجر رونق: فشل حذف العنوان', [
+                'id'    => $address->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'icon'    => 'error',
+                'title'   => 'فشلت العملية',
+                'text'    => 'تعذر حذف العنوان لوجود بيانات مرتبطة به',
+                'message' => 'تعذر حذف العنوان لوجود بيانات مرتبطة به'
+            ], 400);
+        }
     }
 }

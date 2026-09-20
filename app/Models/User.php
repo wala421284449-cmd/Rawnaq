@@ -7,11 +7,12 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -59,9 +60,37 @@ class User extends Authenticatable
         return $this->belongsTo(Address::class, 'addresses_id', 'id');
     }
 
-   
+
     public function actor()
     {
         return $this->morphTo();
+    }
+    // داخل كلاس User في app/Models/User.php
+
+    public function isCustomer()
+    {
+        return $this->role === 'customer'; // أو $this->type === 'customer'
+    }
+
+    public function isOwner()
+    {
+        return $this->role === 'owner'; // أو $this->type === 'owner'
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin'; // أو $this->type === 'admin'
+    }
+    public function contactMessages()
+    {
+        return $this->hasMany(ContactMessage::class, 'user_id');
+    }
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id');
+    }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'user_id');
     }
 }

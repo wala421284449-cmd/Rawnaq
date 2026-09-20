@@ -1,105 +1,142 @@
 @extends('parent')
-@section('title', 'قائمة المشرفين')
-@section('main_title', 'إدارة المشرفين')
-@section('sub_title', 'عرض قائمة المشرفين')
+@section('title', 'قائمة المشرفين | متجر رونق')
+@section('main-title', 'إدارة المشرفين')
+@section('sub-title', 'عرض قائمة المشرفين المسجلين في النظام')
 
 @section('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <style>
+        :root {
+            --rawnaq-gradient: linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9333ea 100%);
+            --rawnaq-primary: #be185d;
+            --rawnaq-primary-hover: #9d174d;
+            --rawnaq-dark-title: #4a044e;
+            --rawnaq-border: #f1f5f9;
+        }
+
         .admin-wrapper {
             font-family: 'Cairo', system-ui, -apple-system, sans-serif;
         }
 
+        /* كرت الجدول الرئيسي الفاخر */
         .custom-table-card {
             background: #ffffff;
             border: 1px solid #f1f5f9;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px -5px rgba(190, 24, 93, 0.07), 0 0 15px 0 rgba(147, 51, 234, 0.03);
             overflow: hidden;
+            position: relative;
+        }
+
+        /* شريط علوي ملون ينبض بالحياة */
+        .custom-table-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 5px;
+            background: var(--rawnaq-gradient);
         }
 
         .table-header {
-            border-bottom: 1px solid #f1f5f9;
-            background-color: #ffffff;
+            border-bottom: 1px solid #fce7f3;
+            background: linear-gradient(to left, #ffffff, #fdf4ff);
+            padding: 1.25rem 1.75rem;
         }
 
         .header-icon-box {
-            width: 44px;
-            height: 44px;
-            background-color: #eff6ff;
-            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            background: var(--rawnaq-gradient);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #2563eb;
+            color: #ffffff;
+            font-size: 1.35rem;
+            box-shadow: 0 8px 18px rgba(190, 24, 93, 0.28);
+            transform: rotate(-3deg);
+            transition: transform 0.3s ease;
         }
 
+        .custom-table-card:hover .header-icon-box {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        /* زر إضافة مشرف جديد */
         .btn-create-custom {
-            background-color: #1d68f0;
+            background: var(--rawnaq-gradient);
             border: none;
-            border-radius: 8px;
-            padding: 0.55rem 1.4rem;
-            font-size: 0.9rem;
-            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.6rem 1.6rem;
+            font-size: 0.92rem;
+            font-weight: 700;
             color: #ffffff;
             text-decoration: none;
-            transition: all 0.2s ease-in-out;
+            box-shadow: 0 8px 20px rgba(190, 24, 93, 0.3);
+            transition: all 0.25s ease;
         }
 
         .btn-create-custom:hover {
-            background-color: #1754c7;
             color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(190, 24, 93, 0.42);
         }
 
+        /* تنسيق الجدول */
         .custom-table {
             margin-bottom: 0;
         }
 
         .custom-table thead th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-weight: 700;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 1.25rem;
+            background-color: #fdf4ff;
+            color: #581c87;
+            font-weight: 800;
+            font-size: 0.88rem;
+            border-bottom: 1px solid #f5d0fe;
+            padding: 1.1rem 1.25rem;
             white-space: nowrap;
         }
 
         .custom-table tbody td {
-            padding: 1rem 1.25rem;
+            padding: 1.1rem 1.25rem;
             color: #334155;
-            font-size: 0.9rem;
-            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.92rem;
+            border-bottom: 1px solid #f8fafc;
             vertical-align: middle;
         }
 
+        .custom-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
         .custom-table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: #fdf2f8;
         }
 
         .cell-icon {
-            width: 36px;
-            height: 36px;
-            background-color: #f1f5f9;
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fae8ff 100%);
+            border: 1px solid #fbcfe8;
+            border-radius: 12px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #475569;
-            font-size: 0.9rem;
+            color: var(--rawnaq-primary);
+            font-size: 1rem;
             flex-shrink: 0;
         }
 
+        /* شارات موحدة وراقية */
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 0.35rem 0.85rem;
+            padding: 0.35rem 0.9rem;
             border-radius: 50px;
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .status-active {
@@ -115,82 +152,107 @@
         }
 
         .role-badge {
-            background-color: #f5f3ff;
-            color: #7c3aed;
-            border: 1px solid #ddd6fe;
-            border-radius: 6px;
-            padding: 0.25rem 0.65rem;
-            font-size: 0.8rem;
-            font-weight: 600;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fae8ff 100%);
+            color: #86198f;
+            border: 1px solid #f5d0fe;
+            border-radius: 8px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 700;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
         .address-badge {
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #dbeafe;
-            border-radius: 6px;
-            padding: 0.25rem 0.65rem;
-            font-size: 0.825rem;
+            background-color: #faf5ff;
+            color: #7e22ce;
+            border: 1px solid #f3e8ff;
+            border-radius: 8px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.82rem;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
+        /* توحيد أزرار العمليات بالكامل (نفس الخلفية والحدود واللون) */
         .action-btn {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            border-radius: 10px;
+            background-color: #fdf2f8 !important;
+            border: 1px solid #fbcfe8 !important;
+            color: #be185d !important;
+            transition: all 0.25s ease;
+            font-size: 0.95rem;
             cursor: pointer;
             text-decoration: none;
         }
 
-        .btn-action-show {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-color: #dbeafe;
+        .action-btn:hover {
+            background: var(--rawnaq-gradient) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(190, 24, 93, 0.35);
         }
 
-        .btn-action-show:hover {
-            background-color: #2563eb;
-            color: #fff;
-        }
-
-        .btn-action-edit {
-            background-color: #fffbeb;
-            color: #d97706;
-            border-color: #fef3c7;
-        }
-
-        .btn-action-edit:hover {
-            background-color: #d97706;
-            color: #fff;
-        }
-
-        .btn-action-delete {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border-color: #fee2e2;
-        }
-
-        .btn-action-delete:hover {
-            background-color: #dc2626;
-            color: #fff;
-        }
-
+        /* فوتر الجدول وترقيم الصفحات */
         .table-footer {
+            background: linear-gradient(to right, #ffffff, #fdf4ff);
+            border-top: 1px solid #fce7f3;
+            padding: 1.1rem 1.75rem;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .table-footer .pagination {
+            margin: 0;
+            gap: 4px;
+        }
+
+        .table-footer .page-item .page-link {
+            color: #701a75;
             background-color: #ffffff;
-            border-top: 1px solid #f1f5f9;
-            padding: 1rem 1.5rem;
+            border: 1px solid #fbcfe8;
+            border-radius: 10px !important;
+            padding: 0.45rem 0.85rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(190, 24, 93, 0.03);
+        }
+
+        .table-footer .page-item .page-link:hover {
+            background-color: #fdf2f8;
+            color: var(--rawnaq-primary);
+            border-color: var(--rawnaq-primary);
+            transform: translateY(-1px);
+        }
+
+        .table-footer .page-item.active .page-link {
+            background: var(--rawnaq-gradient) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(190, 24, 93, 0.35);
+        }
+
+        .table-footer .page-item.disabled .page-link {
+            background-color: #f8fafc;
+            border-color: #f1f5f9;
+            color: #cbd5e1;
+        }
+
+        .table-footer p.text-muted,
+        .table-footer .small {
+            font-weight: 600;
+            color: #701a75 !important;
+            font-size: 0.85rem;
+            margin-bottom: 0;
         }
     </style>
 @endsection
@@ -203,22 +265,25 @@
 
                     <div class="card custom-table-card border-0">
                         <!-- Table Header -->
-                        <div
-                            class="table-header px-4 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="table-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="header-icon-box">
-                                    <i class="bi bi-shield-lock-fill fs-4"></i>
+                                    <i class="bi bi-shield-lock-fill"></i>
                                 </div>
                                 <div>
-                                    <h5 class="fw-bold mb-0 text-dark">قائمة المشرفين</h5>
-                                    <small class="text-muted">إدارة حسابات المشرفين، الأدوار، وبيانات التواصل</small>
+                                    <h5 class="fw-bold mb-1" style="color: var(--rawnaq-dark-title);">قائمة المشرفين</h5>
+                                    <small class="text-muted">إدارة حسابات المشرفين، الأدوار، وبيانات التواصل في متجر
+                                        رونق</small>
                                 </div>
                             </div>
-                            <a href="{{ route('admins.create') }}"
-                                class="btn-create-custom d-flex align-items-center gap-2">
-                                <i class="bi bi-plus-lg"></i>
-                                <span>إضافة مشرف جديد</span>
-                            </a>
+                            @can('Create Admin')
+                                <a href="{{ route('admins.create') }}"
+                                    class="btn-create-custom d-flex align-items-center gap-2">
+                                    <i class="bi bi-plus-lg fs-6"></i>
+                                    <span>إضافة مشرف جديد</span>
+                                </a>
+                            @endcan
+
                         </div>
 
                         <!-- Table -->
@@ -234,43 +299,52 @@
                                             <th>الدور (Role)</th>
                                             <th>العنوان السكني</th>
                                             <th>الحالة</th>
-                                            <th style="width: 140px" class="text-center">العمليات</th>
+                                            @canany(['Delete Admin', 'Show Admin', 'Edit Admin'])
+                                                <th style="width: 140px" class="text-center">العمليات</th>
+                                            @endcanany
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse ($admins as $admin)
                                             <tr>
-                                                <td class="text-center fw-bold text-muted">{{ $admin->id }}</td>
+                                                <td class="text-center fw-bold" style="color: #9333ea;">{{ $admin->id }}
+                                                </td>
                                                 <td>
                                                     <div class="d-flex align-items-center gap-2 fw-semibold">
                                                         <div class="cell-icon">
-                                                            <i class="bi bi-person-fill text-primary"></i>
+                                                            <i class="bi bi-person-fill"></i>
                                                         </div>
                                                         <div>
-                                                            <div>{{ $admin->name }}</div>
-                                                            <small class="text-muted fw-normal">انضم
-                                                                {{ $admin->created_at?->diffForHumans() }}</small>
+                                                            <div class="text-dark fw-bold">{{ $admin->name }}</div>
+                                                            <small class="text-muted fw-normal">
+                                                                انضم {{ $admin->created_at?->diffForHumans() }}
+                                                            </small>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span class="text-muted"><i
-                                                            class="bi bi-envelope me-1"></i>{{ $admin->email }}</span>
+                                                    <span class="text-secondary fw-semibold">
+                                                        <i class="bi bi-envelope-at me-1"
+                                                            style="color: var(--rawnaq-primary);"></i>
+                                                        {{ $admin->email }}
+                                                    </span>
                                                 </td>
                                                 <td>
-                                                    <span
-                                                        style="direction: ltr; display: inline-block;">{{ $admin->phone ?? '-' }}</span>
+                                                    <span class="fw-semibold text-dark"
+                                                        style="direction: ltr; display: inline-block;">
+                                                        {{ $admin->phone ?? '-' }}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span class="role-badge">
-                                                        <i class="bi bi-person-badge"></i>
+                                                        <i class="bi bi-shield-check"></i>
                                                         {{ $admin->role ?? 'مشرف' }}
                                                     </span>
                                                 </td>
                                                 <td>
                                                     @if ($admin->address)
                                                         <span class="address-badge">
-                                                            <i class="bi bi-geo-alt"></i>
+                                                            <i class="bi bi-geo-alt-fill"></i>
                                                             {{ $admin->address->city?->name ?? '' }} -
                                                             {{ $admin->address->area }}
                                                         </span>
@@ -289,35 +363,49 @@
                                                         </span>
                                                     @endif
                                                 </td>
+
                                                 <td>
                                                     <div class="d-flex justify-content-center align-items-center gap-2">
                                                         <!-- عرض -->
-                                                        <a href="{{ route('admins.show', $admin->id) }}"
-                                                            class="action-btn btn-action-show" title="عرض التفاصيل">
-                                                            <i class="bi bi-eye"></i>
-                                                        </a>
+                                                        @can('Show Admin')
+                                                            <a href="{{ route('admins.show', $admin->id) }}" class="action-btn"
+                                                                title="عرض التفاصيل">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                        @endcan
 
-                                                        <!-- تعديل -->
-                                                        <a href="{{ route('admins.edit', $admin->id) }}"
-                                                            class="action-btn btn-action-edit" title="تعديل">
-                                                            <i class="bi bi-pencil-square"></i>
-                                                        </a>
 
+                                                        @can('Edit Admin')
+                                                            <!-- تعديل -->
+                                                            <a href="{{ route('admins.edit', $admin->id) }}" class="action-btn"
+                                                                title="تعديل">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                            </a>
+                                                        @endcan
+
+                                                        @can('Delete Admin')
+                                                            <button type="button"
+                                                                onclick="performDestroy({{ $admin->id }}, this)"
+                                                                class="action-btn" title="حذف">
+                                                                <i class="bi bi-trash3"></i>
+                                                            </button>
+                                                        @endcan
                                                         <!-- حذف -->
-                                                        <button type="button"
-                                                            onclick="performDestroy({{ $admin->id }}, this)"
-                                                            class="action-btn btn-action-delete" title="حذف">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
+
                                                     </div>
                                                 </td>
                                             </tr>
                                         @empty
                                             <tr>
                                                 <td colspan="8" class="text-center py-5 text-muted">
-                                                    <i
-                                                        class="bi bi-shield-slash fs-1 d-block mb-2 text-secondary opacity-50"></i>
-                                                    <span class="fw-semibold">لا يوجد مشرفين مسجلين حالياً.</span>
+                                                    <div class="d-inline-flex p-3 rounded-circle mb-3"
+                                                        style="background: #fdf2f8;">
+                                                        <i class="bi bi-shield-slash fs-1"
+                                                            style="color: var(--rawnaq-primary);"></i>
+                                                    </div>
+                                                    <h6 class="fw-bold text-dark">لا يوجد مشرفين مسجلين حالياً</h6>
+                                                    <p class="text-muted small mb-0">يمكنك إضافة مشرف جديد بالضغط على زر
+                                                        الإضافة أعلاه.</p>
                                                 </td>
                                             </tr>
                                         @endforelse
@@ -328,7 +416,7 @@
 
                         <!-- Pagination -->
                         @if ($admins->hasPages())
-                            <div class="table-footer d-flex justify-content-center">
+                            <div class="table-footer d-flex justify-content-center align-items-center">
                                 {{ $admins->links() }}
                             </div>
                         @endif

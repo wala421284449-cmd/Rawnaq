@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Owner;
 use App\Models\Address;
+use App\Models\Owner;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OwnerController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * 1. عرض جدول مالكي وموردي متجر رونق
      */
     public function index()
     {
+        $this->authorize('viewAny', Owner::class);
+
         $owners = User::where('role', 'owner')
             ->with(['actor', 'address.city'])
             ->orderBy('id', 'desc')
@@ -30,9 +36,12 @@ class OwnerController extends Controller
      */
     public function create()
     {
-        $address = Address::with('city')->latest()->get();
+        $this->authorize('create', Owner::class);
 
-        return response()->view('cms.owner.create', compact('address'));
+        $address = Address::with('city')->latest()->get();
+        $roles   = Role::all();
+
+        return response()->view('cms.owner.create', compact('address', 'roles'));
     }
 
     /**
@@ -40,6 +49,8 @@ class OwnerController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Owner::class);
+
         $validator = validator($request->all(), [
             'name'            => 'required|string|min:3|max:45',
             'email'           => 'required|email|max:45|unique:users,email',
@@ -50,6 +61,7 @@ class OwnerController extends Controller
             'gender'          => 'required|in:male,female',
             'status'          => 'required|in:active,inactive',
             'address_id'      => 'required|exists:addresses,id',
+            'role_name'       => 'required|exists:roles,name',
         ], [
             'name.required'            => 'اسم المالك مطلوب.',
             'name.min'                 => 'يجب ألا يقل الاسم عن 3 أحرف.',
@@ -65,6 +77,8 @@ class OwnerController extends Controller
             'status.required'          => 'يرجى تحديد حالة الحساب.',
             'address_id.required'      => 'يرجى اختيار العنوان المسجل.',
             'address_id.exists'        => 'العنوان المحدد غير مسجل في النظام.',
+            'role_name.required'       => 'يرجى اختيار المسمى الوظيفي.',
+            'role_name.exists'         => 'المسمى الوظيفي المحدد غير موجود.',
         ]);
 
         if ($validator->fails()) {
@@ -102,6 +116,9 @@ class OwnerController extends Controller
             $user->actor_id     = $ownerActor->id;
             $user->actor_type   = Owner::class;
             $user->save();
+
+            // تعيين الدور للمالك
+            $user->assignRole($request->input('role_name'));
 
             DB::commit();
 
@@ -147,6 +164,8 @@ class OwnerController extends Controller
             ->with(['actor', 'address.city'])
             ->findOrFail($id);
 
+        $this->authorize('view', $owner->actor ?? $owner);
+
         return response()->view('cms.owner.show', compact('owner'));
     }
 
@@ -158,6 +177,8 @@ class OwnerController extends Controller
         $owner   = User::where('role', 'owner')->with('actor')->findOrFail($id);
         $address = Address::with('city')->latest()->get();
 
+        $this->authorize('update', $owner->actor ?? $owner);
+
         return response()->view('cms.owner.edit', compact('owner', 'address'));
     }
 
@@ -167,6 +188,8 @@ class OwnerController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::where('role', 'owner')->with('actor')->findOrFail($id);
+
+        $this->authorize('update', $user->actor ?? $user);
 
         $validator = validator($request->all(), [
             'name'            => 'required|string|min:3|max:45',
@@ -274,9 +297,12 @@ class OwnerController extends Controller
      */
     public function destroy($id)
     {
+        $user = User::where('role', 'owner')->with('actor')->findOrFail($id);
+
+        $this->authorize('delete', $user->actor ?? $user);
+
         DB::beginTransaction();
         try {
-            $user = User::where('role', 'owner')->with('actor')->findOrFail($id);
             $userEmail = $user->email;
 
             // حذف سجل المالك من جدول owners إن وجد

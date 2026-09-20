@@ -6,6 +6,7 @@ use App\Models\Address;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class AdminController extends Controller
 {
@@ -27,11 +28,15 @@ class AdminController extends Controller
      */
     public function create()
     {
+        $roles = Role::where('guard_name', 'admin')->get();
         $address = Address::with('city')->latest()->get();
 
-        return response()->view('cms.admin.create', compact('address'));
+        return response()->view('cms.admin.create', compact('address', 'roles'));
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     /**
      * Store a newly created resource in storage.
      */
@@ -45,6 +50,7 @@ class AdminController extends Controller
             'gender'     => 'required|in:male,female',
             'status'     => 'required|in:active,inactive',
             'address_id' => 'required|exists:addresses,id',
+            'role_name'  => 'required|exists:roles,name', // تم إضافة التحقق من وجود الدور
         ], [
             'name.required'       => 'اسم المشرف مطلوب.',
             'name.min'            => 'يجب ألا يقل الاسم عن 3 أحرف.',
@@ -61,6 +67,8 @@ class AdminController extends Controller
             'status.in'           => 'حالة الحساب يجب أن تكون نشط أو غير نشط.',
             'address_id.required' => 'يرجى اختيار العنوان المسجل.',
             'address_id.exists'   => 'العنوان المختار غير مسجل في النظام.',
+            'role_name.required'  => 'يرجى اختيار المسمى الوظيفي للمشرف.',
+            'role_name.exists'    => 'المسمى الوظيفي المختار غير موجود في النظام.',
         ]);
 
         if ($validator->fails()) {
@@ -83,9 +91,16 @@ class AdminController extends Controller
         $admin->gender       = $request->input('gender');
         $admin->role         = 'admin';
         $admin->status       = $request->input('status');
-        $admin->addresses_id = $request->input('address_id'); // ربط المفتاح الأجنبي
+        $admin->addresses_id = $request->input('address_id');
 
+        // الخطوة 1: حفظ المشرف أولاً للحصول على ID
         $isSaved = $admin->save();
+
+        // الخطوة 2: ربط الدور بعد نجاح الحفظ
+        if ($isSaved) {
+                      $admin->assignRole($request->input('role_name'));
+
+        }
 
         return response()->json([
             'icon'    => $isSaved ? 'success' : 'error',

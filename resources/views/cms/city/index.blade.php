@@ -1,82 +1,142 @@
 @extends('parent')
-@section('title', 'قائمة المدن')
-@section('main_title', 'إدارة المدن')
-@section('sub_title', 'قائمة المدن')
+@section('title', 'قائمة المدن | متجر رونق')
+@section('main-title', 'إدارة المدن')
+@section('sub-title', 'قائمة المدن المسجلة في النظام')
 
 @section('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <style>
+        :root {
+            --rawnaq-gradient: linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9333ea 100%);
+            --rawnaq-primary: #be185d;
+            --rawnaq-primary-hover: #9d174d;
+            --rawnaq-dark-title: #4a044e;
+            --rawnaq-border: #f1f5f9;
+        }
+
         .city-wrapper {
             font-family: 'Cairo', system-ui, -apple-system, sans-serif;
         }
 
+        /* كرت الجدول الرئيسي الفاخر */
         .custom-table-card {
             background: #ffffff;
             border: 1px solid #f1f5f9;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+            border-radius: 24px;
+            box-shadow: 0 15px 35px -5px rgba(190, 24, 93, 0.07), 0 0 15px 0 rgba(147, 51, 234, 0.03);
             overflow: hidden;
+            position: relative;
+        }
+
+        /* شريط علوي ملون ينبض بالحياة */
+        .custom-table-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 5px;
+            background: var(--rawnaq-gradient);
         }
 
         .table-header {
-            border-bottom: 1px solid #f1f5f9;
-            background-color: #ffffff;
+            border-bottom: 1px solid #fce7f3;
+            background: linear-gradient(to left, #ffffff, #fdf4ff);
+            padding: 1.25rem 1.75rem;
         }
 
         .header-icon-box {
-            width: 42px;
-            height: 42px;
-            background-color: #eff6ff;
-            border-radius: 12px;
+            width: 50px;
+            height: 50px;
+            background: var(--rawnaq-gradient);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #2563eb;
+            color: #ffffff;
+            font-size: 1.35rem;
+            box-shadow: 0 8px 18px rgba(190, 24, 93, 0.28);
+            transform: rotate(-3deg);
+            transition: transform 0.3s ease;
         }
 
+        .custom-table-card:hover .header-icon-box {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        /* زر إضافة مدينة جديدة */
         .btn-create-custom {
-            background-color: #2563eb;
-            border-radius: 50px;
-            padding: 0.5rem 1.3rem;
-            font-size: 0.88rem;
-            font-weight: 600;
+            background: var(--rawnaq-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 0.6rem 1.6rem;
+            font-size: 0.92rem;
+            font-weight: 700;
             color: #ffffff;
             text-decoration: none;
-            transition: all 0.2s;
+            box-shadow: 0 8px 20px rgba(190, 24, 93, 0.3);
+            transition: all 0.25s ease;
         }
 
         .btn-create-custom:hover {
-            background-color: #1d4ed8;
             color: #ffffff;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(190, 24, 93, 0.42);
+        }
+
+        /* تنسيق الجدول */
+        .custom-table {
+            margin-bottom: 0;
         }
 
         .custom-table thead th {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-weight: 600;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 1.25rem;
+            background-color: #fdf4ff;
+            color: #581c87;
+            font-weight: 800;
+            font-size: 0.88rem;
+            border-bottom: 1px solid #f5d0fe;
+            padding: 1.1rem 1.25rem;
+            white-space: nowrap;
         }
 
         .custom-table tbody td {
             padding: 1.1rem 1.25rem;
             color: #334155;
-            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.92rem;
+            border-bottom: 1px solid #f8fafc;
             vertical-align: middle;
         }
 
+        .custom-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #fdf2f8;
+        }
+
+        .cell-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fae8ff 100%);
+            border: 1px solid #fbcfe8;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--rawnaq-primary);
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        /* شارات الحالة */
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 0.35rem 0.85rem;
+            padding: 0.35rem 0.9rem;
             border-radius: 50px;
             font-size: 0.825rem;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .status-available {
@@ -91,76 +151,112 @@
             border: 1px solid #fecaca;
         }
 
+        /* أزرار العمليات الموحدة */
         .action-btn {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
-            border: 1px solid transparent;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            border-radius: 10px;
+            background-color: #fdf2f8;
+            border: 1px solid #fbcfe8;
+            color: #be185d;
+            transition: all 0.25s ease;
+            font-size: 0.95rem;
             cursor: pointer;
+            text-decoration: none;
         }
 
-        .btn-action-show {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-color: #dbeafe;
+        .action-btn:hover {
+            background: var(--rawnaq-gradient);
+            border-color: transparent;
+            color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(190, 24, 93, 0.3);
         }
 
-        .btn-action-show:hover {
-            background-color: #2563eb;
-            color: #fff;
+        /* فوتر الجدول وترقيم الصفحات */
+        .table-footer {
+            background: linear-gradient(to right, #ffffff, #fdf4ff);
+            border-top: 1px solid #fce7f3;
+            padding: 1.1rem 1.75rem;
+            border-radius: 0 0 24px 24px;
         }
 
-        .btn-action-edit {
-            background-color: #fffbeb;
-            color: #d97706;
-            border-color: #fef3c7;
+        .table-footer .pagination {
+            margin: 0;
+            gap: 4px;
         }
 
-        .btn-action-edit:hover {
-            background-color: #d97706;
-            color: #fff;
+        .table-footer .page-item .page-link {
+            color: #701a75;
+            background-color: #ffffff;
+            border: 1px solid #fbcfe8;
+            border-radius: 10px !important;
+            padding: 0.45rem 0.85rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(190, 24, 93, 0.03);
         }
 
-        .btn-action-delete {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border-color: #fee2e2;
+        .table-footer .page-item .page-link:hover {
+            background-color: #fdf2f8;
+            color: var(--rawnaq-primary);
+            border-color: var(--rawnaq-primary);
+            transform: translateY(-1px);
         }
 
-        .btn-action-delete:hover {
-            background-color: #dc2626;
-            color: #fff;
+        .table-footer .page-item.active .page-link {
+            background: var(--rawnaq-gradient) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(190, 24, 93, 0.35);
+        }
+
+        .table-footer .page-item.disabled .page-link {
+            background-color: #f8fafc;
+            border-color: #f1f5f9;
+            color: #cbd5e1;
+        }
+
+        .table-footer p.text-muted,
+        .table-footer .small {
+            font-weight: 600;
+            color: #701a75 !important;
+            font-size: 0.85rem;
+            margin-bottom: 0;
         }
     </style>
 @endsection
 
 @section('content')
-    <div class="city-wrapper py-4" dir="rtl">
-        <div class="container-fluid">
+    <div class="city-wrapper py-3" dir="rtl">
+        <div class="container-fluid px-3">
             <div class="card custom-table-card border-0">
+
                 <!-- الهيدر -->
-                <div class="table-header p-4 d-flex justify-content-between align-items-center">
+                <div class="table-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-3">
                         <div class="header-icon-box">
-                            <i class="bi bi-buildings-fill fs-5"></i>
+                            <i class="bi bi-buildings-fill"></i>
                         </div>
                         <div>
-                            <h5 class="fw-bold mb-0 text-dark">إدارة المدن</h5>
-                            <small class="text-muted">نظرة عامة على المدن المسجلة</small>
+                            <h5 class="fw-bold mb-1" style="color: var(--rawnaq-dark-title);">إدارة المدن</h5>
+                            <small class="text-muted">عرض وإدارة قائمة المدن ومناطق التغطية في متجر رونق</small>
                         </div>
                     </div>
-                    <a href="{{ route('cities.create') }}" class="btn-create-custom d-flex align-items-center gap-2">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>إضافة مدينة</span>
-                    </a>
+                    @can('Create City')
+                        <a href="{{ route('cities.create') }}" class="btn-create-custom d-flex align-items-center gap-2">
+                            <i class="bi bi-plus-lg fs-6"></i>
+                            <span>إضافة مدينة</span>
+                        </a>
+                    @endcan
+
                 </div>
 
-                <!-- الجدول المختصر: الرقم، الاسم، الحالة، العمليات فقط -->
+                <!-- جدول العرض -->
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table custom-table align-middle">
@@ -169,17 +265,22 @@
                                     <th style="width: 80px" class="text-center">#</th>
                                     <th>اسم المدينة</th>
                                     <th class="text-center">الحالة</th>
-                                    <th style="width: 160px" class="text-center">العمليات</th>
+                                    @canany(['Show City', 'Edit City', 'Delete City'])
+                                        <th style="width: 160px" class="text-center">العمليات</th>
+                                    @endcanany
+
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($cities as $city)
                                     <tr>
-                                        <td class="text-center fw-bold text-muted">{{ $city->id }}</td>
+                                        <td class="text-center fw-bold" style="color: #9333ea;">{{ $city->id }}</td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2 fw-semibold">
-                                                <i class="bi bi-geo-alt text-primary"></i>
-                                                <span>{{ $city->name }}</span>
+                                                <div class="cell-icon">
+                                                    <i class="bi bi-geo-alt-fill"></i>
+                                                </div>
+                                                <span class="text-dark fw-bold">{{ $city->name }}</span>
                                             </div>
                                         </td>
                                         <td class="text-center">
@@ -195,27 +296,44 @@
                                         </td>
                                         <td>
                                             <div class="d-flex justify-content-center align-items-center gap-2">
-                                                <!-- زر العرض يفتح صفحة show -->
-                                                <a href="{{ route('cities.show', $city->id) }}"
-                                                    class="action-btn btn-action-show" title="عرض كافة التفاصيل">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <a href="{{ route('cities.edit', $city->id) }}"
-                                                    class="action-btn btn-action-edit" title="تعديل">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </a>
-                                                <button type="button" onclick="performDestroy({{ $city->id }}, this)"
-                                                    class="action-btn btn-action-delete" title="حذف">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                @can('Show City')
+                                                    <!-- عرض -->
+                                                    <a href="{{ route('cities.show', $city->id) }}" class="action-btn"
+                                                        title="عرض كافة التفاصيل">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                @endcan
+
+                                                @can('Edit City')
+                                                    <!-- تعديل -->
+                                                    <a href="{{ route('cities.edit', $city->id) }}" class="action-btn"
+                                                        title="تعديل">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </a>
+                                                @endcan
+                                                @can('Delete City')
+                                                    <button type="button" onclick="performDestroy({{ $city->id }}, this)"
+                                                        class="action-btn" title="حذف">
+                                                        <i class="bi bi-trash3"></i>
+                                                    </button>
+                                                @endcan
+
+
+
+                                                <!-- حذف -->
+
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center py-5 text-muted">
-                                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
-                                            لا توجد مدن مضافة حالياً.
+                                            <div class="d-inline-flex p-3 rounded-circle mb-3" style="background: #fdf2f8;">
+                                                <i class="bi bi-buildings fs-1" style="color: var(--rawnaq-primary);"></i>
+                                            </div>
+                                            <h6 class="fw-bold text-dark">لا توجد مدن مضافة حالياً</h6>
+                                            <p class="text-muted small mb-0">يمكنك البدء بإضافة أول مدينة بالضغط على زر
+                                                الإضافة أعلاه.</p>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -224,8 +342,9 @@
                     </div>
                 </div>
 
+                <!-- Pagination -->
                 @if (method_exists($cities, 'hasPages') && $cities->hasPages())
-                    <div class="p-3 d-flex justify-content-center border-top">
+                    <div class="table-footer d-flex justify-content-center align-items-center">
                         {{ $cities->links() }}
                     </div>
                 @endif

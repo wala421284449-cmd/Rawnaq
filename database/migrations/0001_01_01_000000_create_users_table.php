@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('phone', 45)->nullable();
             $table->string('role', 45)->default('user');
             $table->string('status', 45)->default('active');
-            $table->foreignId('addresses_id')->nullable()->constrained('addresses')->nullOnDelete();
+            // $table->foreignId('addresses_id')->nullable()->constrained('addresses')->nullOnDelete();
+            $table->unsignedBigInteger('addresses_id')->nullable();
             $table->nullableMorphs('actor');
             $table->rememberToken();
             $table->timestamps();

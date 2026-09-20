@@ -40,7 +40,7 @@
             overflow-x: hidden;
         }
 
-        /* توهجات ضوئية أنيقة متناسقة */
+        /* توهجات ضوئية */
         body::before {
             content: "";
             position: absolute;
@@ -235,6 +235,19 @@
             background-color: #be185d;
             border-color: #be185d;
         }
+
+        .forgot-link {
+            font-size: 0.825rem;
+            color: #be185d;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .forgot-link:hover {
+            color: #86198f;
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -281,17 +294,18 @@
                         </div>
                     </div>
 
-                    <!-- Remember Me -->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check m-0">
-                            <input class="form-check-input" type="checkbox" id="remember_me" name="remember" />
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+                        <div class="form-check m-0 d-flex align-items-center gap-2">
+                            <input class="form-check-input m-0" type="checkbox" id="remember_me" name="remember" />
                             <label class="form-check-label" for="remember_me">تذكر بيانات تسجيل دخولي</label>
                         </div>
+                        <a href="#" class="forgot-link">هل نسيت كلمة المرور؟</a>
                     </div>
 
                     <!-- Submit Button -->
                     <div class="d-grid gap-2">
-                        <button type="button" onclick="performLogin()" class="btn btn-login">
+                        <button type="submit" id="btn-submit" class="btn btn-login">
                             <i class="bi bi-box-arrow-in-left ms-1"></i> الدخول إلى المتجر
                         </button>
                     </div>
@@ -310,13 +324,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('cms/js/crud.js') }}"></script>
 
     <script>
         function performLogin() {
-            let email = document.getElementById('email').value;
+            let email = document.getElementById('email').value.trim();
             let password = document.getElementById('password').value;
             let remember = document.getElementById('remember_me').checked;
+            let btn = document.getElementById('btn-submit');
 
             if (!email || !password) {
                 Swal.fire({
@@ -329,34 +343,47 @@
                 return;
             }
 
-            let data = {
-                email: email,
-                password: password,
-                remember: remember
-            };
+            // تعطيل الزر لتجنب التكرار أثناء المعالجة
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm ms-1"></span> جاري الدخول...';
 
-            post('/cms/admin/login', data, '/cms/admin/index');
-        }
-    </script>
-    <script>
-        function login() {
             axios.post('/login', {
-                email:document.getElementById('email').value,
-                password:document.getElementById('password').value,
-            })
+                    email: email,
+                    password: password,
+                    remember: remember
+                })
                 .then(function(response) {
-                    window.location.href='response.data.redirect'
+                    // التحويل المباشر والفوري دون انتظار
+                    window.location.href = response.data.redirect || '/cms/admin';
                 })
                 .catch(function(error) {
-                    if (error.response.data.errors !== undefined) {
-                        showErrorMessages(error.response.data.errors);
-                    } else {
-                        showMessage(error.response.data);
+                    // إعادة تفعيل الزر في حال حدوث خطأ
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-box-arrow-in-left ms-1"></i> الدخول إلى المتجر';
+
+                    let errorMessage = 'بيانات الدخول غير صحيحة، يرجى المحاولة ثانية';
+
+                    if (error.response && error.response.data) {
+                        if (error.response.data.title) {
+                            errorMessage = error.response.data.title;
+                        } else if (error.response.data.message) {
+                            errorMessage = error.response.data.message;
+                        } else if (error.response.data.errors) {
+                            let firstKey = Object.keys(error.response.data.errors)[0];
+                            errorMessage = error.response.data.errors[firstKey][0];
+                        }
                     }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'فشل الدخول',
+                        text: errorMessage,
+                        confirmButtonText: 'حسناً',
+                        confirmButtonColor: '#be185d'
+                    });
                 });
         }
     </script>
-
 </body>
 
 </html>

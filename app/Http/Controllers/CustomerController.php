@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Customer;
 use App\Models\Address;
+use App\Models\Customer;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CustomerController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * 1. عرض جدول زبائن متجر رونق مع الترقيم والبحث التلقائي
      */
     public function index()
     {
+        $this->authorize('viewAny', Customer::class);
+
         $customers = User::where('role', 'customer')
             ->with(['actor', 'address.city'])
             ->orderBy('id', 'desc')
@@ -30,9 +36,12 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        $address = Address::with('city')->latest()->get();
+        $this->authorize('create', Customer::class);
 
-        return response()->view('cms.customer.create', compact('address'));
+        $address = Address::with('city')->latest()->get();
+        $roles = Role::all();
+
+        return response()->view('cms.customer.create', compact('address', 'roles'));
     }
 
     /**
@@ -40,6 +49,8 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Customer::class);
+
         $validator = validator($request->all(), [
             'name'            => 'required|string|min:3|max:45',
             'email'           => 'required|email|max:45|unique:users,email',
@@ -50,6 +61,7 @@ class CustomerController extends Controller
             'gender'          => 'required|in:male,female',
             'status'          => 'required|in:active,inactive',
             'address_id'      => 'required|exists:addresses,id',
+            'role_name'       => 'required|exists:roles,name',
         ], [
             'name.required'            => 'اسم الزبون مطلوب.',
             'name.min'                 => 'يجب ألا يقل الاسم عن 3 أحرف.',
@@ -64,6 +76,8 @@ class CustomerController extends Controller
             'status.required'          => 'يرجى تحديد حالة الحساب.',
             'address_id.required'      => 'يرجى تحديد عنوان التوصيل.',
             'address_id.exists'        => 'العنوان المحدد غير مسجل في النظام.',
+            'role_name.required'       => 'يرجى اختيار المسمى الوظيفي.',
+            'role_name.exists'         => 'المسمى الوظيفي المحدد غير موجود.',
         ]);
 
         if ($validator->fails()) {
@@ -80,13 +94,13 @@ class CustomerController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. إنشاء سجل الزبون في جدول customers التابع لعلاقة الـ Actor
+            // 1. إنشاء سجل الزبون في جدول customers
             $customerActor = new Customer();
             $customerActor->id_number       = $request->input('id_number');
             $customerActor->whats_up_number = $request->input('whats_up_number');
             $customerActor->save();
 
-            // 2. إنشاء المستخدم وربطه بالزبون عبر الـ Polymorphic Actor
+            // 2. إنشاء المستخدم وربطه بالزبون
             $user = new User();
             $user->name         = $request->input('name');
             $user->email        = $request->input('email');
@@ -97,10 +111,11 @@ class CustomerController extends Controller
             $user->status       = $request->input('status');
             $user->addresses_id = $request->input('address_id');
 
-            // ربط الـ Polymorphic Relation
             $user->actor_id     = $customerActor->id;
             $user->actor_type   = Customer::class;
             $user->save();
+
+            $user->assignRole($request->input('role_name'));
 
             DB::commit();
 
@@ -146,6 +161,9 @@ class CustomerController extends Controller
             ->with(['actor', 'address.city'])
             ->findOrFail($id);
 
+        // التحقق من صلاحية العرض (تمرير الـ actor أو الـ user بحسب إعدادات السياسة لديك)
+        $this->authorize('view', $customer->actor ?? $customer);
+
         return response()->view('cms.customer.show', compact('customer'));
     }
 
@@ -154,10 +172,13 @@ class CustomerController extends Controller
      */
     public function edit($id)
     {
-        $customers = User::where('role', 'customer')->with('actor')->findOrFail($id);
-        $address   = Address::with('city')->latest()->get();
+        $customer = User::where('role', 'customer')->with('actor')->findOrFail($id);
+        $address  = Address::with('city')->latest()->get();
 
-        return response()->view('cms.customer.edit', compact('customers', 'address'));
+        $this->authorize('update', $customer->actor ?? $customer);
+
+        // تصحيح الاسم ليكون مفرداً وموافقاً للـ View
+        return response()->view('cms.customer.edit', compact('customer', 'address'));
     }
 
     /**
@@ -165,11 +186,12 @@ class CustomerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::where('role', 'customer')->with('actor')->findOrFail($id);
+        $customerUser = User::where('role', 'customer')->with('actor')->findOrFail($id);
+        $this->authorize('update', $customerUser->actor ?? $customerUser);
 
         $validator = validator($request->all(), [
             'name'            => 'required|string|min:3|max:45',
-            'email'           => 'required|email|max:45|unique:users,email,' . $user->id,
+            'email'           => 'required|email|max:45|unique:users,email,' . $customerUser->id,
             'phone'           => 'required|string|max:45',
             'password'        => 'nullable|string|min:6',
             'id_number'       => 'nullable|string|max:20',
@@ -204,28 +226,26 @@ class CustomerController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. تحديث جدول users
-            $user->name         = $request->input('name');
-            $user->email        = $request->input('email');
-            $user->phone        = $request->input('phone');
+            $customerUser->name         = $request->input('name');
+            $customerUser->email        = $request->input('email');
+            $customerUser->phone        = $request->input('phone');
 
             if ($request->filled('password')) {
-                $user->password = Hash::make($request->input('password'));
+                $customerUser->password = Hash::make($request->input('password'));
             }
 
-            $user->gender       = $request->input('gender');
-            $user->status       = $request->input('status');
-            $user->addresses_id = $request->input('address_id');
-            $user->save();
+            $customerUser->gender       = $request->input('gender');
+            $customerUser->status       = $request->input('status');
+            $customerUser->addresses_id = $request->input('address_id');
+            $customerUser->save();
 
-            // 2. تحديث جدول customers عبر الـ Actor
-            $customerActor = $user->actor;
+            $customerActor = $customerUser->actor;
             if (!$customerActor) {
                 $customerActor = new Customer();
                 $customerActor->save();
-                $user->actor_id   = $customerActor->id;
-                $user->actor_type = Customer::class;
-                $user->save();
+                $customerUser->actor_id   = $customerActor->id;
+                $customerUser->actor_type = Customer::class;
+                $customerUser->save();
             }
 
             $customerActor->id_number       = $request->input('id_number');
@@ -235,9 +255,9 @@ class CustomerController extends Controller
             DB::commit();
 
             Log::info('متجر رونق: تم تحديث بيانات الزبون بنجاح', [
-                'user_id'     => $user->id,
+                'user_id'     => $customerUser->id,
                 'customer_id' => $customerActor->id,
-                'email'       => $user->email,
+                'email'       => $customerUser->email,
                 'admin_id'    => auth('web')->id() ?? 'لوحة التحكم',
                 'ip'          => $request->ip(),
             ]);
@@ -272,17 +292,20 @@ class CustomerController extends Controller
      */
     public function destroy($id)
     {
+        $customerUser = User::where('role', 'customer')->with('actor')->findOrFail($id);
+
+        // التحقق من الصلاحية مبكراً وبشكل آمن
+        $this->authorize('delete', $customerUser->actor ?? $customerUser);
+
         DB::beginTransaction();
         try {
-            $user = User::where('role', 'customer')->with('actor')->findOrFail($id);
-            $userEmail = $user->email;
+            $userEmail = $customerUser->email;
 
-            // حذف سجل الزبون من جدول customers إن وجد
-            if ($user->actor) {
-                $user->actor->delete();
+            if ($customerUser->actor) {
+                $customerUser->actor->delete();
             }
 
-            $user->delete();
+            $customerUser->delete();
 
             DB::commit();
 

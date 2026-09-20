@@ -1,143 +1,243 @@
 @extends('parent')
-@section('title', 'تعديل بيانات المشرف')
-@section('main_title', 'إدارة المشرفين')
-@section('sub_title', 'تعديل بيانات المشرف')
+@section('title', 'تعديل بيانات المشرف: ' . $admin->name . ' | متجر رونق')
+@section('main-title', 'إدارة المشرفين')
+@section('sub-title', 'تحديث بيانات حساب المشرف')
 
 @section('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <style>
+        :root {
+            --rawnaq-gradient: linear-gradient(135deg, #e11d48 0%, #be185d 50%, #9333ea 100%);
+            --rawnaq-primary: #be185d;
+            --rawnaq-rose-light: #fdf2f8;
+            --rawnaq-purple-soft: #faf5ff;
+            --rawnaq-dark: #2e1065;
+            --rawnaq-text-sub: #6b21a8;
+            --rawnaq-border: #f3e8ff;
+        }
+
         .admin-wrapper {
             font-family: 'Cairo', system-ui, -apple-system, sans-serif;
         }
 
+        /* الكرت الرئيسي */
         .custom-form-card {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f1f5f9;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px -5px rgba(190, 24, 93, 0.08), 0 0 15px 0 rgba(147, 51, 234, 0.03);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* شريط علوي ملون */
+        .custom-form-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            height: 5px;
+            background: var(--rawnaq-gradient);
         }
 
         .form-header {
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f8fafc;
+            background: linear-gradient(to left, #ffffff, #fdf4ff);
+            padding: 1.25rem 1.75rem;
         }
 
         .header-icon-box {
-            width: 44px;
-            height: 44px;
-            background-color: #dbeafe;
-            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            background: var(--rawnaq-gradient);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #2563eb;
+            color: #ffffff;
+            font-size: 1.4rem;
+            box-shadow: 0 8px 18px rgba(190, 24, 93, 0.28);
+            transform: rotate(-3deg);
+            transition: transform 0.3s ease;
+        }
+
+        .custom-form-card:hover .header-icon-box {
+            transform: rotate(0deg) scale(1.05);
         }
 
         .btn-return-custom {
             font-size: 0.875rem;
-            color: #475569;
-            background-color: #ffffff;
-            border: 1.5px solid #cbd5e1;
+            color: var(--rawnaq-primary);
+            background: #ffffff;
+            border: 1.5px solid #fbcfe8;
             border-radius: 50px;
-            padding: 0.4rem 1.25rem;
-            font-weight: 600;
+            padding: 0.45rem 1.35rem;
+            font-weight: 700;
             text-decoration: none;
-            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 8px rgba(190, 24, 93, 0.06);
+            transition: all 0.25s ease;
         }
 
         .btn-return-custom:hover {
-            background-color: #f8fafc;
-            color: #0f172a;
-            border-color: #94a3b8;
+            background: var(--rawnaq-gradient);
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 6px 15px rgba(190, 24, 93, 0.25);
+            transform: translateY(-2px);
         }
 
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1d4ed8;
+        /* حاويات الأقسام لتنظيم حيوي */
+        .section-box {
+            background: #fafafa;
+            border: 1px solid #f3e8ff;
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            transition: all 0.25s ease;
+        }
+
+        .section-box:hover {
+            background: #ffffff;
+            border-color: #fbcfe8;
+            box-shadow: 0 6px 20px rgba(190, 24, 93, 0.04);
+        }
+
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #fdf2f8 0%, #fae8ff 100%);
+            border: 1px solid #f5d0fe;
+            color: var(--rawnaq-primary);
+            font-size: 0.92rem;
+            font-weight: 800;
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            margin-bottom: 1.25rem;
         }
 
         .custom-label {
-            font-size: 0.875rem;
-            font-weight: 600;
+            font-size: 0.88rem;
+            font-weight: 700;
             color: #334155;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.45rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .badge-req {
+            background-color: #fdf2f8;
+            color: var(--rawnaq-primary);
+            border: 1px solid #fbcfe8;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        .badge-opt {
+            background-color: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
         }
 
         .input-group-custom .input-group-text {
-            background-color: #f8fafc;
+            background-color: #ffffff;
             border: 1.5px solid #e2e8f0;
             border-left: none;
-            border-radius: 0 10px 10px 0;
-            color: #64748b;
-            padding: 0.6rem 0.85rem;
+            border-radius: 0 12px 12px 0;
+            color: #94a3b8;
+            padding: 0.65rem 1rem;
+            transition: all 0.25s ease;
         }
 
         .input-group-custom .form-control,
         .input-group-custom .form-select {
+            background-color: #ffffff;
             border: 1.5px solid #e2e8f0;
             border-right: none;
-            border-radius: 10px 0 0 10px;
-            padding: 0.6rem 0.85rem;
-            font-size: 0.9rem;
+            border-radius: 12px 0 0 12px;
+            padding: 0.65rem 1rem;
+            font-size: 0.925rem;
             color: #1e293b;
-            background-color: #ffffff;
+            font-weight: 500;
+            transition: all 0.25s ease;
         }
 
+        /* تفاعل التركيز */
         .input-group-custom .form-control:focus,
         .input-group-custom .form-select:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+            border-color: #d946ef;
+            box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.15);
             outline: none;
         }
 
         .input-group-custom:focus-within .input-group-text {
-            border-color: #3b82f6;
+            border-color: #d946ef;
+            color: #be185d;
+            background-color: #fdf4ff;
         }
 
         .field-hint {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.78rem;
+            color: #9333ea;
             margin-top: 0.35rem;
+            font-weight: 600;
         }
 
+        .ltr-input {
+            direction: ltr;
+            text-align: right;
+        }
+
+        /* تذييل النموذج */
         .form-footer {
-            background-color: #ffffff;
+            background: linear-gradient(to right, #ffffff, #fdf4ff);
             border-top: 1px solid #f1f5f9;
-            border-radius: 0 0 16px 16px;
+            padding: 1.25rem 2rem;
+            border-radius: 0 0 24px 24px;
         }
 
         .btn-save-custom {
-            background-color: #1d68f0;
+            background: var(--rawnaq-gradient);
             border: none;
-            border-radius: 8px;
-            padding: 0.55rem 1.6rem;
-            font-size: 0.9rem;
-            font-weight: 600;
+            border-radius: 12px;
+            padding: 0.65rem 2rem;
+            font-size: 0.95rem;
+            font-weight: 800;
             color: #ffffff;
-            transition: all 0.2s;
+            box-shadow: 0 8px 22px rgba(190, 24, 93, 0.35);
+            transition: all 0.25s ease;
         }
 
         .btn-save-custom:hover {
-            background-color: #1754c7;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(190, 24, 93, 0.45);
+            color: #ffffff;
         }
 
         .btn-cancel-custom {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 0.55rem 1.4rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #475569;
+            background-color: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.65rem 1.6rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #64748b;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .btn-cancel-custom:hover {
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
             color: #1e293b;
+            border-color: #cbd5e1;
         }
     </style>
 @endsection
@@ -150,14 +250,15 @@
 
                     <div class="card custom-form-card border-0">
                         <!-- Header -->
-                        <div class="form-header px-4 py-3 d-flex justify-content-between align-items-center">
+                        <div class="form-header d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="header-icon-box">
-                                    <i class="bi bi-person-gear fs-4"></i>
+                                    <i class="bi bi-person-gear"></i>
                                 </div>
                                 <div>
-                                    <h5 class="fw-bold mb-0 text-dark">تعديل بيانات المشرف #{{ $admin->id }}</h5>
-                                    <small class="text-muted">تحديث بيانات الحساب والمعلومات الشخصية للمشرف</small>
+                                    <h5 class="fw-bold mb-1" style="color: #4a044e;">تعديل بيانات المشرف:
+                                        {{ $admin->name }}</h5>
+                                    <small class="text-muted">تحديث بيانات الحساب والمعلومات الإدارية في متجر رونق</small>
                                 </div>
                             </div>
                             <a href="{{ route('admins.index') }}" class="btn-return-custom d-flex align-items-center gap-2">
@@ -168,120 +269,140 @@
 
                         <!-- Form -->
                         <form id="edit_admin_form">
+                            @csrf
                             <div class="p-4">
 
-                                <!-- Section 1: Basic Info -->
-                                <div class="section-title mb-3 d-flex align-items-center gap-2">
-                                    <i class="bi bi-person-lines-fill"></i>
-                                    <span>البيانات الشخصية</span>
+                                <!-- Section 1: البيانات الأساسية والحساب -->
+                                <div class="section-box">
+                                    <div class="section-badge">
+                                        <i class="bi bi-person-badge-fill"></i>
+                                        <span>البيانات الأساسية والحساب</span>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <!-- Name -->
+                                        <div class="col-md-6">
+                                            <label for="name" class="custom-label">
+                                                <span>اسم المشرف</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-person-heart"></i></span>
+                                                <input type="text" name="name" id="name" class="form-control"
+                                                    value="{{ $admin->name }}" placeholder="مثال: سارة أحمد" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Email -->
+                                        <div class="col-md-6">
+                                            <label for="email" class="custom-label">
+                                                <span>البريد الإلكتروني</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-envelope-at"></i></span>
+                                                <input type="email" name="email" id="email"
+                                                    class="form-control ltr-input" value="{{ $admin->email }}"
+                                                    placeholder="admin@rawnaq.com" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="col-md-6">
+                                            <label for="phone" class="custom-label">
+                                                <span>رقم الهاتف</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i
+                                                        class="bi bi-telephone-outbound"></i></span>
+                                                <input type="text" name="phone" id="phone"
+                                                    class="form-control ltr-input" value="{{ $admin->phone }}"
+                                                    placeholder="059xxxxxxx" required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Password (اختياري) -->
+                                        <div class="col-md-6">
+                                            <label for="password" class="custom-label">
+                                                <span>كلمة المرور الجديدة</span>
+                                                <span class="badge-opt">اختياري</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                                <input type="password" name="password" id="password"
+                                                    class="form-control ltr-input"
+                                                    placeholder="اتركها فارغة إن لم ترغب بالتغيير"
+                                                    autocomplete="new-password">
+                                            </div>
+                                            <div class="field-hint">
+                                                <i class="bi bi-info-circle ms-1"></i> يترك الحقل فارغاً في حال الرغبة
+                                                بالاحتفاظ بكلمة المرور الحالية
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="row g-3 mb-4">
-                                    <!-- Name -->
-                                    <div class="col-md-6">
-                                        <label for="name" class="custom-label">
-                                            اسم المشرف <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                            <input type="text" name="name" id="name" class="form-control"
-                                                placeholder="مثال: أحمد محمد" value="{{ $admin->name }}" required>
-                                        </div>
+                                <!-- Section 2: الصلاحيات والموقع -->
+                                <div class="section-box">
+                                    <div class="section-badge"
+                                        style="color: #9333ea; border-color: #e9d5ff; background: #faf5ff;">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                        <span>إعدادات الحالة والعنوان</span>
                                     </div>
 
-                                    <!-- Email -->
-                                    <div class="col-md-6">
-                                        <label for="email" class="custom-label">
-                                            البريد الإلكتروني <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                            <input type="email" name="email" id="email" class="form-control"
-                                                placeholder="example@domain.com" value="{{ $admin->email }}" required>
+                                    <div class="row g-3">
+                                        <!-- Gender -->
+                                        <div class="col-md-4">
+                                            <label for="gender" class="custom-label">
+                                                <span>الجنس</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                                                <select name="gender" id="gender" class="form-select" required>
+                                                    <option value="" disabled>اختر الجنس...</option>
+                                                    <option value="female" @selected($admin->gender == 'female' || $admin->gender == 'أنثى')>أنثى</option>
+                                                    <option value="male" @selected($admin->gender == 'male' || $admin->gender == 'ذكر')>ذكر</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Phone -->
-                                    <div class="col-md-6">
-                                        <label for="phone" class="custom-label">
-                                            رقم الهاتف <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                            <input type="text" name="phone" id="phone" class="form-control"
-                                                placeholder="059xxxxxxx" value="{{ $admin->phone }}" required>
-                                        </div>
-                                    </div>
-
-                                    <!-- Password (اختياري عند التعديل) -->
-                                    <div class="col-md-6">
-                                        <label for="password" class="custom-label">كلمة المرور الجديدة</label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                            <input type="password" name="password" id="password" class="form-control"
-                                                placeholder="اترك الحقل فارغاً إذا لم ترغب في التغيير"
-                                                autocomplete="new-password">
-                                        </div>
-                                        <div class="field-hint">يترك فارغاً في حال الرغبة بالاحتفاظ بكلمة المرور الحالية
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <hr class="my-4 text-muted opacity-25">
-
-                                <!-- Section 2: Account Settings & Location -->
-                                <div class="section-title mb-3 d-flex align-items-center gap-2">
-                                    <i class="bi bi-sliders"></i>
-                                    <span>إعدادات الحساب والموقع</span>
-                                </div>
-
-                                <div class="row g-3">
-                                    <!-- Gender -->
-                                    <div class="col-md-4">
-                                        <label for="gender" class="custom-label">
-                                            الجنس <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
-                                            <select name="gender" id="gender" class="form-select" required>
-                                                <option value="" disabled>...اختر الجنس</option>
-                                                <option value="male" @selected($admin->gender == 'male' || $admin->gender == 'ذكر')>ذكر</option>
-                                                <option value="female" @selected($admin->gender == 'female' || $admin->gender == 'أنثى')>أنثى</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <!-- Status -->
-                                    <div class="col-md-4">
-                                        <label for="status" class="custom-label">
-                                            الحالة <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-toggle-on"></i></span>
-                                            <select name="status" id="status" class="form-select" required>
-                                                <option value="" disabled>...اختر الحالة</option>
-                                                <option value="active" @selected($admin->status == 'active' || $admin->status == 1)>نشط</option>
-                                                <option value="inactive" @selected($admin->status == 'inactive' || $admin->status == 0)>غير نشط</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <!-- Address -->
-                                    <div class="col-md-4">
-                                        <label for="address_id" class="custom-label">
-                                            العنوان المسجل <span class="text-danger">*</span>
-                                        </label>
-                                        <div class="input-group input-group-custom">
-                                            <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
-                                            <select name="address_id" id="address_id" class="form-select" required>
-                                                <option value="" disabled>...اختر العنوان</option>
-                                                @foreach ($address as $item)
-                                                    <option value="{{ $item->id }}" @selected($item->id == $admin->addresses_id)>
-                                                        {{ $item->street }} - {{ $item->city->name ?? '' }}
-                                                        ({{ $item->area }})
+                                        <!-- Status -->
+                                        <div class="col-md-4">
+                                            <label for="status" class="custom-label">
+                                                <span>حالة الحساب</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-toggle2-on"></i></span>
+                                                <select name="status" id="status" class="form-select" required>
+                                                    <option value="" disabled>اختر الحالة...</option>
+                                                    <option value="active" @selected($admin->status == 'active' || $admin->status == 1)>نشط (مفعل)</option>
+                                                    <option value="inactive" @selected($admin->status == 'inactive' || $admin->status == 0)>غير نشط (معطل)
                                                     </option>
-                                                @endforeach
-                                            </select>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Address -->
+                                        <div class="col-md-4">
+                                            <label for="address_id" class="custom-label">
+                                                <span>عنوان التواجد</span>
+                                                <span class="badge-req">مطلوب</span>
+                                            </label>
+                                            <div class="input-group input-group-custom">
+                                                <span class="input-group-text"><i class="bi bi-pin-map-fill"></i></span>
+                                                <select name="address_id" id="address_id" class="form-select" required>
+                                                    <option value="" disabled>اختر العنوان...</option>
+                                                    @foreach ($address as $item)
+                                                        <option value="{{ $item->id }}" @selected($item->id == ($admin->addresses_id ?? $admin->address_id))>
+                                                            {{ $item->street }} - {{ $item->city->name ?? '' }}
+                                                            ({{ $item->area }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -289,11 +410,11 @@
                             </div>
 
                             <!-- Footer Actions -->
-                            <div class="form-footer px-4 py-3 d-flex justify-content-end align-items-center gap-2">
-                                <a href="{{ route('admins.index') }}" class="btn-cancel-custom">إلغاء</a>
+                            <div class="form-footer d-flex justify-content-end align-items-center gap-3">
+                                <a href="{{ route('admins.index') }}" class="btn-cancel-custom">إلغاء الأمر</a>
                                 <button type="button" onclick="performUpdate({{ $admin->id }})"
                                     class="btn-save-custom d-flex align-items-center gap-2">
-                                    <i class="bi bi-check2"></i>
+                                    <i class="bi bi-check2-circle fs-5"></i>
                                     <span>حفظ التعديلات</span>
                                 </button>
                             </div>
@@ -319,11 +440,36 @@
             };
 
             let passwordVal = document.getElementById('password').value;
-            if (passwordVal.trim() !== '') {
+            if (passwordVal && passwordVal.trim() !== '') {
                 data.password = passwordVal;
             }
 
-            update('/cms/admin/admins/' + id, data, '/cms/admin/admins');
+            axios.put('/cms/admin/admins/' + id, data)
+                .then(function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: response.data.title || 'تم التعديل بنجاح',
+                        text: response.data.text || response.data.message,
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+
+                    // التوجيه الفوري والمضمون لصفحة قائمة المشرفين
+                    setTimeout(function() {
+                        window.location.href = "{{ route('admins.index') }}";
+                    }, 1200);
+                })
+                .catch(function(error) {
+                    let message = 'حدث خطأ أثناء تعديل بيانات المشرف';
+                    if (error.response && error.response.data) {
+                        message = error.response.data.text || error.response.data.message || message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ في التعديل',
+                        text: message
+                    });
+                });
         }
     </script>
 @endsection
