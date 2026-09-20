@@ -30,5 +30,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 EXPOSE 80
 
-# السر هنا: تشغيل أوامر التهيئة وقاعدة البيانات ثم تشغيل سيرفر أباتشي
-CMD php artisan migrate --force && apache2-foreground
+# تشغيل الـ Migrations ثم Seeders لتعبئة الحسابات ثم تشغيل السيرفر
+CMD php artisan migrate --force && php artisan db:seed --force && apache2-foreground
