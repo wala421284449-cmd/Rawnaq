@@ -20,7 +20,7 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html
 
-# تثبيت حزم PHP وتجميع الواجهة عبر Vite
+# تثبيت حزم PHP وتجميع واجهة الـ Vite و Tailwind
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
@@ -34,5 +34,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 EXPOSE 80
 
-# تشغيل الـ Migrations ثم Seeders ثم تفعيل التخزين والكاش وتشغيل السيرفر
-CMD php artisan migrate --force && php artisan db:seed --force && php artisan storage:link --force && php artisan config:clear && php artisan cache:clear && apache2-foreground
+# الأوامر النهائية: تفعيل الـ Migrations، ربط التخزين، تفريغ الكاش، ثم تشغيل السيرفر
+CMD php artisan migrate --force && php artisan storage:link --force && php artisan config:clear && php artisan cache:clear && apache2-foreground
