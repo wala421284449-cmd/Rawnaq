@@ -6,14 +6,13 @@ npm install
 npm run build
 
 # كاش وراوت لارافيل
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
 php artisan config:cache
 php artisan route:cache
+php artisan view:cache
 
-# تشغيل المايجريشن والسييدز لإدخال بيانات الدخول وقاعدة البيانات
-php artisan migrate:fresh --force --seed
+# تشغيل الـ Migrations والـ Seeders بأمان بدون حذف البيانات الحالية
+php artisan migrate --force
+php artisan db:seed --force
 
 # تشغيل سيرفر أباتشي
 apache2-foreground
