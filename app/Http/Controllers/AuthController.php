@@ -17,6 +17,76 @@ class AuthController extends Controller
         return response()->view('cms.auth.login');
     }
 
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'email'    => 'required|email',
+    //         'password' => 'required|string',
+    //     ], [
+    //         'email.required'    => 'البريد الالكتروني مطلوب',
+    //         'email.email'       => 'صيغة الايميل الالكتروني خاطئة',
+    //         'password.required' => 'كلمة المرور مطلوبة',
+    //     ]);
+
+    //     $user = User::where('email', $request->email)->first();
+
+    //     if ($user && Hash::check($request->password, $user->password)) {
+    //         if ($user->status === 'inactive') {
+    //             // تسجيل تحذير أمني لمحاولة دخول لحساب معطل
+    //             Log::warning('متجر رونق: محاولة تسجيل دخول لحساب معطل', [
+    //                 'email' => $request->email,
+    //                 'ip'    => $request->ip(),
+    //             ]);
+
+    //             return response()->json([
+    //                 'icon'  => 'error',
+    //                 'title' => 'حسابك معطل حاليا',
+    //             ], 403);
+    //         }
+
+    //         if ($user->isCustomer()) {
+    //             Auth::guard('customer')->login($user, $request->filled('remember'));
+    //         } elseif ($user->isOwner()) {
+    //             Auth::guard('owner')->login($user, $request->filled('remember'));
+    //         } else {
+    //             Auth::guard('admin')->login($user, $request->filled('remember'));
+    //         }
+
+    //         $request->session()->regenerate();
+
+    //         // ==========================================
+    //         // إرسال إشعار تسجيل الدخول بالبريد الإلكتروني
+    //         // ==========================================
+    //         $user->notify(new LoginNotification());
+
+
+    //         // تسجيل حدث نجاح تسجيل الدخول (INFO Level)
+    //         Log::info('متجر رونق: تم تسجيل الدخول بنجاح', [
+    //             'user_id' => $user->id,
+    //             'email'   => $user->email,
+    //             'ip'      => $request->ip(),
+    //         ]);
+
+    //         return response()->json([
+    //             'icon'     => 'success',
+    //             'title'    => 'تم تسجيل الدخول بنجاح',
+    //             'redirect' => url('/cms/admin'),
+    //         ], 200);
+    //     }
+
+    //     // ==========================================
+    //     // المرحلة الثانية: تسجيل محاولة الاختراق / الدخول الفاشلة (WARNING)
+    //     // ==========================================
+    //     Log::warning('متجر رونق: محاولة تسجيل دخول فاشلة (بيانات غير صحيحة)', [
+    //         'email' => $request->email,
+    //         'ip'    => $request->ip(),
+    //     ]);
+
+    //     return response()->json([
+    //         'icon'  => 'error',
+    //         'title' => 'البريد الالكتروني او كلمة المرور غير صحيحة',
+    //     ], 400);
+    // }
     public function login(Request $request)
     {
         $request->validate([
@@ -44,12 +114,16 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            // تحديد الـ Guard والمسار المخصص لكل دور
             if ($user->isCustomer()) {
                 Auth::guard('customer')->login($user, $request->filled('remember'));
+                $redirectUrl = url('/cms/customer'); // أو المسار الخاص بالزبون
             } elseif ($user->isOwner()) {
                 Auth::guard('owner')->login($user, $request->filled('remember'));
+                $redirectUrl = url('/cms/owner'); // أو المسار الخاص بالمالك
             } else {
                 Auth::guard('admin')->login($user, $request->filled('remember'));
+                $redirectUrl = url('/cms/admin'); // مسار الآدمن
             }
 
             $request->session()->regenerate();
@@ -57,8 +131,12 @@ class AuthController extends Controller
             // ==========================================
             // إرسال إشعار تسجيل الدخول بالبريد الإلكتروني
             // ==========================================
-            $user->notify(new LoginNotification());
-
+            try {
+                $user->notify(new LoginNotification());
+            } catch (\Exception $e) {
+                // لتجنب توقف عملية تسجيل الدخول لو حدثت مشكلة في إرسال الإيميل
+                Log::error('فشل إرسال إشعار تسجيل الدخول: ' . $e->getMessage());
+            }
 
             // تسجيل حدث نجاح تسجيل الدخول (INFO Level)
             Log::info('متجر رونق: تم تسجيل الدخول بنجاح', [
@@ -70,7 +148,7 @@ class AuthController extends Controller
             return response()->json([
                 'icon'     => 'success',
                 'title'    => 'تم تسجيل الدخول بنجاح',
-                'redirect' => url('/cms/admin'),
+                'redirect' => $redirectUrl,
             ], 200);
         }
 
