@@ -35,8 +35,11 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.
 
 RUN a2enmod rewrite
 
+# ضبط المنفذ 8080 وتوجيه أباتشي للاستماع عليه بشكل صريح ودائم
+ENV PORT=8080
 EXPOSE 8080
-RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
+RUN echo "Listen 8080" > /etc/apache2/ports.conf
+RUN sed -i 's/:80/:8080/g' /etc/apache2/sites-available/000-default.conf
 
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
