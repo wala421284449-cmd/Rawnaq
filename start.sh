@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
-# تثبيت حزم PHP وتوليد الـ autoload
+# تثبيت حزم PHP وتجميع الواجهة
 composer install --no-dev --optimize-autoloader
-
-# تثبيت حزم الـ Node.js وتجميع ملفات الواجهة (Vite / Tailwind)
 npm install
 npm run build
 
-# تشغيل الكاش والترحيل وقواعد البيانات
+# كاش وراوت لارافيل
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 php artisan config:cache
 php artisan route:cache
-php artisan view:cache
-php artisan migrate --force
-php artisan db:seed --force
+
+# تشغيل المايجريشن والسييدز لإدخال بيانات الدخول وقاعدة البيانات
+php artisan migrate:fresh --force --seed
 
 # تشغيل سيرفر أباتشي
 apache2-foreground
