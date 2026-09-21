@@ -41,7 +41,9 @@ RUN a2enmod rewrite
 EXPOSE 8080
 RUN sed -i 's/80/8080/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 
-EXPOSE 80
+# نسخ ملف السكريبت الخاص بالتشغيل إلى داخل الحاوية وإعطائه صلاحية التنفيذ
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
-# أوامر التشغيل: تشغيل الـ Migrations، ربط التخزين، بناء الكاش، ثم تشغيل السيرفر
-CMD php artisan migrate --force --seed && php artisan storage:link --force && php artisan config:cache && php artisan route:cache && apache2-foreground
+# اعتماد ملف start.sh كأمر أساسي عند إقلاع الحاوية
+CMD ["start.sh"]
