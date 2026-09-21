@@ -35,4 +35,4 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 EXPOSE 80
 
 # أوامر التشغيل: تشغيل الـ Migrations، ربط التخزين، بناء الكاش، ثم تشغيل السيرفر
-CMD php artisan migrate --force && php artisan storage:link --force && php artisan config:cache && php artisan route:cache && apache2-foreground
+CMD php artisan migrate --force --seed && php artisan storage:link --force && php artisan config:cache && php artisan route:cache && apache2-foreground
