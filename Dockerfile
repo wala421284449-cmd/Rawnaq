@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# تثبيت متطلبات النظام و Node.js لتجميع الواجهة
+# تثبيت حزم النظام و Node.js لتجميع التصميم عبر Vite و Tailwind
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -20,7 +20,7 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html
 
-# تثبيت حزم PHP وتجميع واجهة الـ Vite و Tailwind
+# تثبيت حزم لارافيل وتجميع الواجهة والتصميم تلقائياً
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
@@ -34,5 +34,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 
 EXPOSE 80
 
-# الأوامر النهائية: تفعيل الـ Migrations، ربط التخزين، تفريغ الكاش، ثم تشغيل السيرفر
-CMD php artisan migrate --force && php artisan storage:link --force && php artisan config:clear && php artisan cache:clear && apache2-foreground
+# أوامر التشغيل: تشغيل الـ Migrations، ربط التخزين، بناء الكاش، ثم تشغيل السيرفر
+CMD php artisan migrate --force && php artisan storage:link --force && php artisan config:cache && php artisan route:cache && apache2-foreground
