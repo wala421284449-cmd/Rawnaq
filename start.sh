@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 
-# تثبيت حزم PHP وتجميع الواجهة
 composer install --no-dev --optimize-autoloader
 npm install
 npm run build
 
-# كاش وراوت لارافيل
+# مسح جميع أنواع الكاش القديمة من السيرفر
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear
+
+# إعادة بناء الكاش الجديد
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# تشغيل الـ Migrations والـ Seeders بأمان بدون حذف البيانات الحالية
+# تشغيل التحديث والـ Seeders بدون مسح الجداول
 php artisan migrate --force
 php artisan db:seed --force
 
-# تشغيل سيرفر أباتشي
 apache2-foreground
