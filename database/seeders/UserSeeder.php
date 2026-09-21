@@ -13,7 +13,8 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // 1. إنشاء المشرف (ولاء) - لا يحتاج جدول منفصل للـ actor
-        $walaAdmin = User::firstOrCreate(
+
+        $walaAdmin = User::updateOrCreate(
             ['email' => 'wala@admin.com'],
             [
                 'name' => 'ولاء مشرف',
