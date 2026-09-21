@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# تثبيت الحزم المطلوبة وتجاوز ملفات التطوير لتسريع العملية
+composer install --no-dev --optimize-autoloader --force
+
 # تشغيل الكاش لتسريع الأداء
 php artisan config:cache
 php artisan route:cache
